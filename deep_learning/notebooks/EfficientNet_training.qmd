@@ -1,0 +1,163 @@
+---
+title: "EfficientNet Training"
+format: 
+    html:
+        embed-resources: true
+---
+
+## Libraries
+
+```{python}
+import torch
+import torchvision
+import kornia.augmentation as K
+
+from pathlib import Path
+from torch import nn
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+from torchinfo import summary
+```
+
+```{python}
+from functions import train_step, test_step, save_intermediate_epochs, train, test_accuracy
+```
+
+```{python}
+device = "cuda" if torch.cuda.is_available() else "cpu"
+device
+```
+
+## Constants
+
+```{python}
+BATCH_SIZE = 64
+TORCH_SEED = 12
+TORCH_CUDA_SEED = 12
+```
+
+## Data Loading
+
+```{python}
+
+work_dir = Path()
+image_path = work_dir / "deep_learning/data"
+
+train_dir = image_path / "train"
+valid_dir = image_path / "valid"
+test_dir = image_path / "test"
+
+train_dir.resolve(), test_dir.resolve()
+
+```
+
+## Batch Augmentations
+
+```{python}
+
+augmentations = K.AugmentationSequential(
+        #K.ColorJiggle(p = 0.5, brightness=0.2), 
+        #K.ColorJiggle(p = 0.5, contrast=0.2), 
+        #K.ColorJiggle(p = 0.5, saturation=0.2),
+        #K.ColorJiggle(p = 0.5, hue = 0.2),
+        K.RandomHorizontalFlip(p=0.5),
+        #K.RandomVerticalFlip(p = 0.5), 
+        K.RandomPerspective(distortion_scale=0.5, p = 0.3),
+        K.RandomRotation(degrees = 10, p = 0.3),
+        K.RandomAffine(degrees = 10, p = 0.2),
+        same_on_batch = True
+)
+```
+
+## EfficientNetB0
+
+```{python}
+weights = torchvision.models.EfficientNet_B0_Weights.DEFAULT
+model = torchvision.models.efficientnet_b0(weights = weights)
+auto_transforms = weights.transforms()
+
+train_data = datasets.ImageFolder(root=train_dir, 
+                                  transform=auto_transforms, # transform for the data
+                                  target_transform=None) # transform for the target, label
+
+valid_data = datasets.ImageFolder(root=valid_dir, 
+                                 transform=auto_transforms, # transform for the data
+                                 target_transform=None)
+
+test_data = datasets.ImageFolder(root=test_dir, 
+                                 transform=auto_transforms, # transform for the data
+                                 target_transform=None)
+
+class_names = train_data.classes
+class_dict = train_data.class_to_idx
+
+train_dataloader = DataLoader(dataset=train_data,
+                              batch_size=BATCH_SIZE, 
+                              num_workers=1, 
+                              shuffle=True)
+
+valid_dataloader = DataLoader(dataset=valid_data, 
+                              batch_size=BATCH_SIZE, 
+                              num_workers=1, 
+                              shuffle=False)
+
+test_dataloader = DataLoader(dataset=test_data, 
+                             batch_size=BATCH_SIZE, 
+                             num_workers=1, 
+                             shuffle=False)
+
+len(train_dataloader), len(valid_dataloader), len(test_dataloader)
+
+```
+
+```{python}
+
+model.classifier = nn.Sequential(
+        nn.Dropout(p=0.2, inplace=True),
+        nn.Linear(in_features=1280, out_features=len(class_names))
+)
+
+summary(model = model,
+        input_size = (1,3,224,224),
+        col_names=["input_size", "output_size", "num_params", "trainable"],
+        col_width = 20,
+        row_settings = ["var_names"])
+
+```
+
+```{python}
+
+torch.manual_seed(TORCH_SEED)
+torch.cuda.manual_seed(TORCH_CUDA_SEED)
+
+NUM_WARM_UP_EPOCHS = 2
+NUM_EPOCHS = 10
+SAVE_INTERMEDIATE_DIR = work_dir / "deep_learning/data/models/intermediate_weights/EfficientNetB0_pretrained"
+
+model = model.to(device)
+
+loss_fn = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(params=model.parameters(), lr = 0.001)
+scheduler = True
+
+from timeit import default_timer as timer
+start_time = timer()
+
+model_results = train(model = model, 
+                      train_dataloader = train_dataloader, 
+                      test_dataloader = valid_dataloader, 
+                      optimizer = optimizer, 
+                      scheduler=scheduler,
+                      augmentations = augmentations,
+                      loss_fn = loss_fn, 
+                      warm_up_epochs=NUM_WARM_UP_EPOCHS,
+                      epochs=NUM_EPOCHS, 
+                      save_intermediate_weights=True,
+                      save_intermediate_weights_loc=SAVE_INTERMEDIATE_DIR,
+                      device=device)
+
+end_time = timer()
+print(f"Total training time: {end_time - start_time:.3f} seconds")
+
+```
+

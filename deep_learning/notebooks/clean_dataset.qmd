@@ -1,0 +1,56 @@
+---
+title: "Dataset Cleaner"
+author: "Konstantinos Patelis"
+project:
+    output-dir: deep_learning/notebooks
+    execute-dir: file
+format: 
+    html:
+        embed-resources: true
+---
+
+```{python}
+
+import polars as pl
+import polars.selectors as cs
+from polars import col
+from cleanvision import Imagelab
+from great_tables import GT
+from pathlib import Path
+
+```
+
+```{python}
+#imagelab = Imagelab(data_path="deep_learning/data/")
+imagelab = Imagelab(data_path="../data/")
+imagelab.find_issues()
+```
+
+
+```{python}
+issue_summary = pl.from_pandas(imagelab.issue_summary.reset_index(), include_index=True)
+issues = pl.from_pandas(imagelab.issues.reset_index(), include_index=True)
+```
+
+
+```{python}
+imagelab.report()
+```
+
+```{python}
+issue_summary
+```
+
+Blurry Images
+```{python}
+(GT(issues.filter(col("is_blurry_issue")).select("index", cs.contains("blurry"))))
+```
+
+No notable issues identified with the images in question.
+
+Near Duplicates
+```{python}
+(GT(issues.filter(col("is_near_duplicates_issue")).select("index", cs.contains("near"))))
+```
+
+There is a picture of the same bird identified as both a band tailed guan (train/055) and a blue throated piping guan (train/152). Inspection of the data revealed the correct label is blue throated piping guan, therefore the first instance was removed.

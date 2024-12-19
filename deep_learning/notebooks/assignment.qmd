@@ -1,0 +1,78 @@
+---
+title: "Deep Learning Assignment - Bird Species Classification"
+format: 
+    html:
+        embed-resources: true
+---
+
+## Overview - Main objective
+
+We are working for a company that is developing a nature observation application where the user is able to upload a photo and our deep learning models 
+will produce details and information about the main object of the photo. Our application is already able to identify whether an uploaded picture contains a bird. 
+The Chief Data Officer (CDO) has requested our team to spend time enhancing the application by developing an image classification deep learning model that is finetuned on data 
+of different bird species. Once the model identifies the bird species, our application will pull information from different sources and provide them to the user.  
+
+For this project, we are only concerned with developing a bird species classifier from bird images. A different team is taking care of the part that provides information to the user.
+We have also clarified with the CEO that the existing classifier that identifies birds vs other objects will stay in place. Once the first model classifies something as a bird, our model 
+will be used for more specific classification. The CDO and upper management expect that this enhancement will increase the appeal of the app, drawing in more users and additional traffic.  
+
+The CDO has said that high accuracy is important, but we should aim to develop small models that can be used even in edge devices. 
+
+The main objective of this report is to provide an overview of the data that was used to finetune this model, the steps to analyze and clean the data, the models that were trained and how the compare to each other as well as larger variants (to observe whether there is significant drop in accuracy when using small models) and what is our final recommendation.
+
+## Data
+
+We will be using a dataset of 525 different bird species that has been gathered from a variety of internet sources. 
+The dataset contains 84,365 images (on average 160 images per species, before cleaning) that can be used to train the model, an additional 2,625 images in a validation set (5 per species) and a final 2,625 images in a hidden test set. The first two sets of images will be used to train and validate our model, while the test set will only be used at the end of the process to confirm model performance. 
+Most of the images are sized 224x224 using RGB channels and have been stored in JPG format. Our investigation into the data revealed there were cases with odd sizes and ratios. More on that in the next section.  
+
+The data is available to download from [Hugging Face](https://huggingface.co/datasets/chriamue/bird-species-dataset). It was originally uploaded to Kaggle but is no longer available there (details and links on the Hugging Face page for the dataset).
+
+With this analysis and model development exercise we will attempt to create an image classifier for these 525 bird species. Of course, even with 525 species, our model might be limited in identifying bird species due to the vast ecological diversity and potential lack of representation in the training dataset. However, we believe that this approach is an important first step and can hopefully be expanded in future releases once we are able to get our hands on more data and images for additional species.
+
+## Data Exploration and Data Cleaning
+
+Before we begin developing models, we spend time exploring and cleaning the data, to ensure we remove duplicates and bad quality images to avoid causing performance issues for our models.
+We run this analysis across all three sets of data, namely train/validation/test. The train portion is cleaned to improve model performance while validation and test are cleaned to ensure our metrics represent the actual capabilities of the model.  
+
+To identify exact or near duplicates, low information and odd photos, we leverage the [cleanvision](https://github.com/cleanlab/cleanvision) library. Cleanvision managed to identify potential issues with 220 images across the three splits of the data. There were 211 images which were tagged as having odd size, 7 that were blurry, 2 that were near duplicates (one duplicate) and one image with an odd aspect ratio (same as one of the images flagged with odd size, therefore 221 issues affecting 220 images).  
+
+The size issue mostly lies with images for a particular bird species, plush crested jays (only in train and validation splits, while test is normal), with only one image coming from the loggerhead shrike. We will resize all images to 224x224 as part of our image transformations anyways so this is not expected to be an issue. We will investigate performance of the final model on the test set for that species. On the single image of the loggerhead shrike, we observe that this is actually smaller than 224x224 but we do not expect performance issues considering the dataset size.  
+
+We reviewed the images classified as blurry and observed no noticeable blur that would affect model performance post finetuning. Finally, there is a picture of the same bird identified as both a band tailed guan (train/055) and a blue throated piping guan (train/152). Inspection of the data revealed the correct label is blue throated piping guan, therefore the first instance was removed.  
+
+In an initial attempt to perform data augmentation, we will also define transforms of the data that would flip or rotate the images every time a batch is fed into the model during training. We note that further enhancements in terms of data augmentations will be investigated in future versions of the model, where we will attempt to emulate weather conditions, such as foggy images. For this instance of the model we will try to make it robust to the various angles of the pictures taken by the app users.  
+
+## Deep Learning Models - Image Classification Algorithms
+
+In this section, we explore different vision model architectures as well as different size variants for each architecture to compare and benchmark accuracy, prediction time and model size, all of which are important factors to consider when we intend to put that model to production. We will explore variants of , ResNet, EfficientNet and ConvNeXt models.  
+
+All above model architectures have already been trained extensively on the ImageNet dataset, which already contains different types of birds. Therefore, instead of starting from scratch, we will aim to finetune these models from available checkpoints, with the assumption that the model will have already come up with bird-related features in its initial training phase. In the ResNet section, we will test that assumption on the ResNet34 variant by training a version from zero as well as finetuning.
+
+### ResNet
+
+Let us first explore the benefit of finetuning models pretrained on ImageNet dataset.
+
+
+
+
+
+
+Does the report include a section with variations of a Deep Learning model and specifies which one is the model that best suits the main objective(s) of this analysis?
+Summary of training at least three variations of the Deep Learning model you selected. For example, you can use different clustering techniques or different hyperparameters.
+
+## Findings
+
+Does the report include a clear and well presented section with key findings related to the main objective(s) of the analysis?
+A paragraph explaining which of your Deep Learning models you recommend as a final model that best fits your needs in terms of accuracy or explainability.
+Summary Key Findings and Insights, which walks your reader through the main findings of your modeling exercise. (maybe in Conclusion section??)
+
+## Flaws and Future Improvements
+
+Does the report highlight possible flaws in the model and a plan of action to revisit this analysis with additional data or different modeling techniques?
+Suggestions for next steps in analyzing this data, which may include suggesting revisiting this model or adding specific data features to achieve a better model. (maybe in Conclusion section??)
+
+## Conclusion
+
+Summary Key Findings and Insights, which walks your reader through the main findings of your modeling exercise.
+Suggestions for next steps in analyzing this data, which may include suggesting revisiting this model or adding specific data features to achieve a better model.

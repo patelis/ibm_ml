@@ -1,0 +1,103 @@
+Resnet34_from_scratch
+ 10%|█         | 1/10 [04:00<36:01, 240.20s/it]
+Epoch: 0 | Train loss: 4.7132 | Train acc: 9.38% | Test loss: 3.6372 | Test acc: 23.07%
+ 20%|██        | 2/10 [07:59<31:58, 239.82s/it]
+Epoch: 1 | Train loss: 2.4705 | Train acc: 42.73% | Test loss: 2.0647 | Test acc: 53.27%
+ 30%|███       | 3/10 [12:06<28:22, 243.15s/it]
+Epoch: 2 | Train loss: 1.5215 | Train acc: 62.81% | Test loss: 1.3050 | Test acc: 66.89%
+ 40%|████      | 4/10 [16:10<24:20, 243.48s/it]
+Epoch: 3 | Train loss: 1.0616 | Train acc: 72.97% | Test loss: 0.9983 | Test acc: 74.44%
+ 50%|█████     | 5/10 [20:15<20:20, 244.04s/it]
+Epoch: 4 | Train loss: 0.7792 | Train acc: 79.60% | Test loss: 0.9382 | Test acc: 76.64%
+ 60%|██████    | 6/10 [24:23<16:21, 245.27s/it]
+Epoch: 5 | Train loss: 0.5683 | Train acc: 84.55% | Test loss: 0.8710 | Test acc: 77.94%
+ 70%|███████   | 7/10 [28:26<12:13, 244.48s/it]
+Epoch: 6 | Train loss: 0.4102 | Train acc: 88.47% | Test loss: 0.9210 | Test acc: 78.79%
+ 80%|████████  | 8/10 [32:30<08:08, 244.41s/it]
+Epoch: 7 | Train loss: 0.2971 | Train acc: 91.32% | Test loss: 0.9346 | Test acc: 79.32%
+ 90%|█████████ | 9/10 [36:33<04:04, 244.00s/it]
+Epoch: 8 | Train loss: 0.2209 | Train acc: 93.25% | Test loss: 0.8324 | Test acc: 81.85%
+100%|██████████| 10/10 [40:38<00:00, 243.83s/it]
+Epoch: 9 | Train loss: 0.1678 | Train acc: 94.83% | Test loss: 0.7078 | Test acc: 82.78%
+Total training time: 2438.256 seconds
+
+Resnet34_pretrained
+ 50%|█████     | 1/2 [03:02<03:02, 182.19s/it]
+Epoch: 0 | Train loss: 2.0806 | Train acc: 62.82% | Test loss: 0.7857 | Test acc: 83.30%
+100%|██████████| 2/2 [06:01<00:00, 180.80s/it]
+Epoch: 1 | Train loss: 0.7125 | Train acc: 84.22% | Test loss: 0.5480 | Test acc: 85.97%
+ 10%|█         | 1/10 [04:04<36:43, 244.83s/it]
+Epoch: 0 | Train loss: 0.9731 | Train acc: 75.02% | Test loss: 0.6059 | Test acc: 83.26%
+ 20%|██        | 2/10 [08:08<32:33, 244.16s/it]
+Epoch: 1 | Train loss: 0.4610 | Train acc: 87.47% | Test loss: 0.4982 | Test acc: 88.54%
+ 30%|███       | 3/10 [12:14<28:36, 245.19s/it]
+Epoch: 2 | Train loss: 0.3285 | Train acc: 90.76% | Test loss: 0.5554 | Test acc: 88.39%
+ 40%|████      | 4/10 [16:19<24:28, 244.77s/it]
+Epoch: 3 | Train loss: 0.2471 | Train acc: 92.84% | Test loss: 0.5213 | Test acc: 87.50%
+ 50%|█████     | 5/10 [20:22<20:20, 244.12s/it]
+Epoch: 4 | Train loss: 0.1940 | Train acc: 94.23% | Test loss: 0.4337 | Test acc: 88.62%
+ 60%|██████    | 6/10 [24:25<16:15, 243.90s/it]
+Epoch: 5 | Train loss: 0.1534 | Train acc: 95.31% | Test loss: 0.3972 | Test acc: 89.03%
+ 70%|███████   | 7/10 [28:28<12:10, 243.65s/it]
+Epoch: 6 | Train loss: 0.1246 | Train acc: 96.25% | Test loss: 0.4722 | Test acc: 89.66%
+ 80%|████████  | 8/10 [32:31<08:06, 243.46s/it]
+Epoch: 7 | Train loss: 0.1133 | Train acc: 96.53% | Test loss: 0.6075 | Test acc: 88.65%
+ 90%|█████████ | 9/10 [36:35<04:03, 243.54s/it]
+Epoch: 8 | Train loss: 0.0887 | Train acc: 97.25% | Test loss: 0.5568 | Test acc: 90.92%
+100%|██████████| 10/10 [40:38<00:00, 243.88s/it]
+Epoch: 9 | Train loss: 0.0832 | Train acc: 97.44% | Test loss: 0.5166 | Test acc: 90.51%
+Total training time: 2801.310 seconds
+
+Resnet18
+ 50%|█████     | 1/2 [02:56<02:56, 176.55s/it]
+Epoch: 0 | Train loss: 2.2158 | Train acc: 60.72% | Test loss: 0.8713 | Test acc: 81.36%
+100%|██████████| 2/2 [05:56<00:00, 178.15s/it]
+Epoch: 1 | Train loss: 0.7933 | Train acc: 82.72% | Test loss: 0.6215 | Test acc: 84.97%
+ 10%|█         | 1/10 [03:08<28:12, 188.07s/it]
+Epoch: 0 | Train loss: 0.8784 | Train acc: 77.27% | Test loss: 0.6381 | Test acc: 84.60%
+ 20%|██        | 2/10 [06:18<25:15, 189.48s/it]
+Epoch: 1 | Train loss: 0.4446 | Train acc: 88.01% | Test loss: 0.4910 | Test acc: 87.09%
+ 30%|███       | 3/10 [09:25<21:59, 188.54s/it]
+Epoch: 2 | Train loss: 0.3112 | Train acc: 91.30% | Test loss: 0.5575 | Test acc: 86.90%
+ 40%|████      | 4/10 [12:25<18:31, 185.18s/it]
+Epoch: 3 | Train loss: 0.2397 | Train acc: 93.02% | Test loss: 0.5399 | Test acc: 87.28%
+ 50%|█████     | 5/10 [15:28<15:21, 184.29s/it]
+Epoch: 4 | Train loss: 0.1754 | Train acc: 94.77% | Test loss: 0.5450 | Test acc: 86.87%
+ 60%|██████    | 6/10 [18:32<12:16, 184.07s/it]
+Epoch: 5 | Train loss: 0.1515 | Train acc: 95.46% | Test loss: 0.4976 | Test acc: 89.17%
+ 70%|███████   | 7/10 [21:33<09:08, 183.00s/it]
+Epoch: 6 | Train loss: 0.1246 | Train acc: 96.16% | Test loss: 0.4267 | Test acc: 90.25%
+ 80%|████████  | 8/10 [24:41<06:09, 184.56s/it]
+Epoch: 7 | Train loss: 0.1049 | Train acc: 96.78% | Test loss: 0.4424 | Test acc: 89.55%
+ 90%|█████████ | 9/10 [27:49<03:05, 185.85s/it]
+Epoch: 8 | Train loss: 0.0999 | Train acc: 96.97% | Test loss: 0.3950 | Test acc: 89.92%
+100%|██████████| 10/10 [30:58<00:00, 185.82s/it]
+Epoch: 9 | Train loss: 0.0838 | Train acc: 97.43% | Test loss: 0.4834 | Test acc: 90.81%
+
+Total training time: 2215.397 seconds
+
+ 50%|█████     | 1/2 [02:59<02:59, 179.55s/it]
+Epoch: 0 | Train loss: 2.5345 | Train acc: 54.06% | Test loss: 0.9219 | Test acc: 81.66%
+100%|██████████| 2/2 [06:18<00:00, 189.40s/it]
+Epoch: 1 | Train loss: 1.0682 | Train acc: 76.37% | Test loss: 0.7115 | Test acc: 82.11%
+ 10%|█         | 1/10 [03:22<30:20, 202.23s/it]
+Epoch: 0 | Train loss: 1.0172 | Train acc: 73.97% | Test loss: 0.6365 | Test acc: 84.90%
+ 20%|██        | 2/10 [06:40<26:39, 199.94s/it]
+Epoch: 1 | Train loss: 0.6126 | Train acc: 83.77% | Test loss: 0.6275 | Test acc: 85.16%
+ 30%|███       | 3/10 [10:01<23:21, 200.21s/it]
+Epoch: 2 | Train loss: 0.4885 | Train acc: 86.68% | Test loss: 0.5054 | Test acc: 87.35%
+ 40%|████      | 4/10 [13:22<20:03, 200.56s/it]
+Epoch: 3 | Train loss: 0.4076 | Train acc: 88.80% | Test loss: 0.4998 | Test acc: 88.21%
+ 50%|█████     | 5/10 [16:43<16:44, 200.84s/it]
+Epoch: 4 | Train loss: 0.3572 | Train acc: 89.95% | Test loss: 0.4918 | Test acc: 89.88%
+ 60%|██████    | 6/10 [20:06<13:26, 201.67s/it]
+Epoch: 5 | Train loss: 0.3126 | Train acc: 91.16% | Test loss: 0.5751 | Test acc: 89.25%
+ 70%|███████   | 7/10 [23:27<10:03, 201.26s/it]
+Epoch: 6 | Train loss: 0.2721 | Train acc: 92.19% | Test loss: 0.5236 | Test acc: 90.89%
+ 80%|████████  | 8/10 [26:35<06:34, 197.24s/it]
+Epoch: 7 | Train loss: 0.2481 | Train acc: 92.85% | Test loss: 0.4643 | Test acc: 90.89%
+ 90%|█████████ | 9/10 [30:00<03:19, 199.60s/it]
+Epoch: 8 | Train loss: 0.2161 | Train acc: 93.66% | Test loss: 0.3494 | Test acc: 91.00%
+100%|██████████| 10/10 [33:25<00:00, 200.58s/it]
+Epoch: 9 | Train loss: 0.1937 | Train acc: 94.25% | Test loss: 0.4051 | Test acc: 91.00%
+Total training time: 2385.082 seconds

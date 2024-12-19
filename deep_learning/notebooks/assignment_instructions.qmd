@@ -1,0 +1,37 @@
+---
+title: "Assignment"
+format: 
+    html:
+        embed-resources: true
+---
+
+## Grading Criteria
+
+Your peer or instructor will review your report from the perspective of a Chief Data Officer or the Head of Analytics of your team and will assess whether the Deep Learning model you selected best helped you achieve the main objective of your analysis.
+
+Yes, you are expected to leverage a wide variety of tools, but this report should focus on presenting findings, insights, and next steps. You may include some visuals from your code output, but this report is intended as a summary of your findings, not a code review. Optionally, you can submit your code as a python notebook or as a print out in the appendix of your document.
+
+The grading will center around 5 main points:
+
+- Does the report include a section describing the data? __Done__
+- Does the report include a paragraph detailing the main objective(s) of this analysis? __Done__
+- Does the report include a section with variations of a Deep Learning model and specifies which one is the model that best suits the main objective(s) of this analysis? __Pending__
+- Does the report include a clear and well presented section with key findings related to the main objective(s) of the analysis? __Pending__
+- Does the report highlight possible flaws in the model and a plan of action to revisit this analysis with additional data or different modeling techniques? __Pending__
+
+## Instructions
+
+Make sure to include mainly insights and findings on your report. There is no need to include code, unless you want to.
+
+Required
+Once you have selected a data set, you will produce the deliverables listed below and submit them to one of your peers for review. Treat this exercise as an opportunity to produce analysis that are ready to highlight your analytical skills for a senior audience, for example, the Chief Data Officer, or the Head of Analytics at your company.
+
+Sections required in your report:
+
+- Main objective of the analysis that also specifies whether your model will be focused on a specific type of Deep Learning or Reinforcement Learning algorithm and the benefits that your analysis brings to the business or stakeholders of this data. __Done__
+- Brief description of the data set you chose, a summary of its attributes, and an outline of what you are trying to accomplish with this analysis. __Done__
+- Brief summary of data exploration and actions taken for data cleaning or feature engineering. __Done__
+- Summary of training at least three variations of the Deep Learning model you selected. For example, you can use different clustering techniques or different hyperparameters. __Pending__
+- A paragraph explaining which of your Deep Learning models you recommend as a final model that best fits your needs in terms of accuracy or explainability. __Pending__
+- Summary Key Findings and Insights, which walks your reader through the main findings of your modeling exercise. __Pending__
+- Suggestions for next steps in analyzing this data, which may include suggesting revisiting this model or adding specific data features to achieve a better model. __Pending__
