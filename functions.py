@@ -99,7 +99,9 @@ def train(model: torch.nn.Module,
         for param in model.parameters():
             param.requires_grad = False
         
-        # Figure out how to parameterize the name of the last layer
+        # Figure out how to parameterize the name of the last layer, currently updated the function to run EfficientNet
+        # Maybe use list(model.children)??
+        #for param in model.fc.parameters():
         for param in model.classifier.parameters():
             param.requires_grad = True
         

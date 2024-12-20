@@ -1,0 +1,130 @@
+---
+title: "Predictions"
+format: 
+    html:
+        embed-resources: true
+---
+
+
+```{python}
+import torch
+import torchvision
+
+from pathlib import Path
+from torch import nn
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+from torchinfo import summary
+
+from functions import test_accuracy
+
+```
+
+```{python}
+device = "cuda" if torch.cuda.is_available() else "cpu"
+BATCH_SIZE = 32
+TORCH_SEED = 12
+TORCH_CUDA_SEED = 12
+
+work_dir = Path()
+image_path = work_dir / "deep_learning/data"
+
+valid_dir = image_path / "valid"
+test_dir = image_path / "test"
+
+```
+
+```{python}
+#weights = torchvision.models.ResNet18_Weights.DEFAULT
+#model = torchvision.models.resnet18(weights = None)
+#auto_transforms = weights.transforms()
+
+#model.fc = nn.Linear(in_features=512, out_features = 525)
+
+#model.load_state_dict(torch.load(work_dir / "deep_learning/data/models/intermediate_weights/ResNet18_pretrained/ResNet_epoch_9.pt", weights_only=True))
+
+weights = torchvision.models.EfficientNet_B0_Weights.DEFAULT
+model = torchvision.models.efficientnet_b0(weights = None)
+auto_transforms = weights.transforms()
+
+model.classifier = nn.Sequential(
+        nn.Dropout(p=0.2, inplace=True),
+        nn.Linear(in_features=1280, out_features=525)
+)
+
+model.load_state_dict(torch.load(work_dir / "deep_learning/data/models/intermediate_weights/EfficientNetB0_pretrained/EfficientNet_epoch_7.pt", weights_only=True))
+
+#weights = torchvision.models.ConvNeXt_Tiny_Weights.DEFAULT
+#model = torchvision.models.convnext_tiny(weights = weights)
+#auto_transforms = weights.transforms()
+
+#from torch import nn, Tensor
+#class LayerNorm2d(nn.LayerNorm):
+#    def forward(self, x: Tensor) -> Tensor:
+#        x = x.permute(0, 2, 3, 1)
+#        x = nn.functional.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
+#        x = x.permute(0, 3, 1, 2)
+#        return x
+
+#model.classifier = nn.Sequential(
+#        LayerNorm2d((768,), eps=1e-06, elementwise_affine=True),
+#        nn.Flatten(start_dim=1, end_dim=-1),
+#        nn.Linear(in_features=768, out_features=525, bias=True)
+#)
+
+#model.load_state_dict(torch.load(work_dir / "deep_learning/data/models/intermediate_weights/ConvNeXt_Tiny_pretrained/ConvNeXt_epoch_9.pt", weights_only=True))
+
+```
+
+```{python}
+
+valid_data = datasets.ImageFolder(root=valid_dir, 
+                                 transform=auto_transforms, # transform for the data
+                                 target_transform=None)
+
+test_data = datasets.ImageFolder(root=test_dir, 
+                                 transform=auto_transforms, # transform for the data
+                                 target_transform=None)
+
+class_names = test_data.classes
+class_dict = test_data.class_to_idx
+
+valid_dataloader = DataLoader(dataset=valid_data, 
+                              batch_size=BATCH_SIZE, 
+                              num_workers=1, 
+                              shuffle=False)
+
+test_dataloader = DataLoader(dataset=test_data, 
+                             batch_size=BATCH_SIZE, 
+                             num_workers=1, 
+                             shuffle=False)
+
+```
+
+```{python}
+
+from timeit import default_timer as timer
+start_time = timer()
+
+acc = test_accuracy(model, test_dataloader)
+
+end_time = timer()
+print(f"Accuracy: {acc}")
+print(f"Total inference time: {end_time - start_time:.3f} seconds")
+print(f"Length of dataloader: {len(test_dataloader)}")
+print(f"Average inference time: {(end_time - start_time) / 2625} seconds")
+
+```
+
+```{python}
+acc = test_accuracy(model, valid_dataloader)
+acc
+```
+
+```{python}
+summary(model = model,
+        input_size = (1,3,224,224),
+        col_names=["input_size", "output_size", "num_params", "trainable"],
+        col_width = 20,
+        row_settings = ["var_names"])
+```

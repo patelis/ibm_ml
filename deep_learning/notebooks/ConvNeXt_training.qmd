@@ -1,5 +1,5 @@
 ---
-title: "EfficientNet Training"
+title: "ConvNeXt Training"
 format: 
     html:
         embed-resources: true
@@ -33,7 +33,7 @@ device
 ```{python}
 
 # Reduced the batch size to 32 from 64 for EfficientNetB1, 16 B2
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 TORCH_SEED = 12
 TORCH_CUDA_SEED = 12
 ```
@@ -71,11 +71,11 @@ augmentations = K.AugmentationSequential(
 )
 ```
 
-## EfficientNet
+## ConvNeXt
 
 ```{python}
-weights = torchvision.models.EfficientNet_B2_Weights.DEFAULT
-model = torchvision.models.efficientnet_b2(weights = weights)
+weights = torchvision.models.ConvNeXt_Tiny_Weights.DEFAULT
+model = torchvision.models.convnext_tiny(weights = weights)
 auto_transforms = weights.transforms()
 
 train_data = datasets.ImageFolder(root=train_dir, 
@@ -113,16 +113,22 @@ len(train_dataloader), len(valid_dataloader), len(test_dataloader)
 ```
 
 ```{python}
+from torch import nn, Tensor
+class LayerNorm2d(nn.LayerNorm):
+    def forward(self, x: Tensor) -> Tensor:
+        x = x.permute(0, 2, 3, 1)
+        x = nn.functional.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
+        x = x.permute(0, 3, 1, 2)
+        return x
 
-# To be adjusted based on EfficientNet used
-#model.classifier = nn.Sequential(
-#        nn.Dropout(p=0.2, inplace=True),
-#        nn.Linear(in_features=1280, out_features=len(class_names))
-#)
+```
+
+```{python}
 
 model.classifier = nn.Sequential(
-        nn.Dropout(p=0.3, inplace=True),
-        nn.Linear(in_features=1408, out_features=len(class_names))
+        LayerNorm2d((768,), eps=1e-06, elementwise_affine=True),
+        nn.Flatten(start_dim=1, end_dim=-1),
+        nn.Linear(in_features=768, out_features=len(class_names), bias=True)
 )
 
 summary(model = model,
@@ -142,7 +148,7 @@ NUM_WARM_UP_EPOCHS = 2
 NUM_EPOCHS = 10
 
 # Adjust path for weights here or move at beginning of notebook
-SAVE_INTERMEDIATE_DIR = work_dir / "deep_learning/data/models/intermediate_weights/EfficientNetB2_pretrained"
+SAVE_INTERMEDIATE_DIR = work_dir / "deep_learning/data/models/intermediate_weights/ConvNeXt_Tiny_pretrained"
 
 model = model.to(device)
 

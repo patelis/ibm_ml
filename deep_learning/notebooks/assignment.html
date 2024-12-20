@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Assignment</title>
+<title>Deep Learning Assignment - Bird Species Classification</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -3041,7 +3041,7 @@ vertical-align: -.125em;
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Assignment</h1>
+<h1 class="title">Deep Learning Assignment - Bird Species Classification</h1>
 </div>
 
 
@@ -3058,33 +3058,139 @@ vertical-align: -.125em;
 </header>
 
 
-<section id="grading-criteria" class="level2">
-<h2 class="anchored" data-anchor-id="grading-criteria">Grading Criteria</h2>
-<p>Your peer or instructor will review your report from the perspective of a Chief Data Officer or the Head of Analytics of your team and will assess whether the Deep Learning model you selected best helped you achieve the main objective of your analysis.</p>
-<p>Yes, you are expected to leverage a wide variety of tools, but this report should focus on presenting findings, insights, and next steps. You may include some visuals from your code output, but this report is intended as a summary of your findings, not a code review. Optionally, you can submit your code as a python notebook or as a print out in the appendix of your document.</p>
-<p>The grading will center around 5 main points:</p>
-<ul>
-<li>Does the report include a section describing the data? <strong>Done</strong></li>
-<li>Does the report include a paragraph detailing the main objective(s) of this analysis? <strong>Done</strong></li>
-<li>Does the report include a section with variations of a Deep Learning model and specifies which one is the model that best suits the main objective(s) of this analysis? <strong>Done</strong></li>
-<li>Does the report include a clear and well presented section with key findings related to the main objective(s) of the analysis? <strong>Done</strong></li>
-<li>Does the report highlight possible flaws in the model and a plan of action to revisit this analysis with additional data or different modeling techniques? <strong>Done</strong></li>
-</ul>
+<section id="overview---main-objective" class="level2">
+<h2 class="anchored" data-anchor-id="overview---main-objective">Overview - Main objective</h2>
+<p>We are working for a company that is developing a nature observation application where the user is able to upload a photo and our deep learning models will produce details and information about the main object of the photo. Our application is already able to identify whether an uploaded picture contains a bird. The Chief Data Officer (CDO) has requested our team to spend time enhancing the application by developing an image classification deep learning model that is finetuned on data of different bird species. Once the model identifies the bird species, our application will pull information from different sources and provide them to the user.</p>
+<p>For this project, we are only concerned with developing a bird species classifier from bird images. A different team is taking care of the part that provides information to the user. We have also clarified with the CEO that the existing classifier that identifies birds vs other objects will stay in place. Once the first model classifies something as a bird, our model will be used for more specific classification. The CDO and upper management expect that this enhancement will increase the appeal of the app, drawing in more users and additional traffic.</p>
+<p>The CDO has said that high accuracy is important, but we should aim to develop small models that can be used even in edge devices.</p>
+<p>The main objective of this report is to provide an overview of the data that was used to finetune this model, the steps to analyze and clean the data, the models that were trained and how the compare to each other as well as larger variants (to observe whether there is significant drop in accuracy when using small models) and what is our final recommendation.</p>
 </section>
-<section id="instructions" class="level2">
-<h2 class="anchored" data-anchor-id="instructions">Instructions</h2>
-<p>Make sure to include mainly insights and findings on your report. There is no need to include code, unless you want to.</p>
-<p>Required Once you have selected a data set, you will produce the deliverables listed below and submit them to one of your peers for review. Treat this exercise as an opportunity to produce analysis that are ready to highlight your analytical skills for a senior audience, for example, the Chief Data Officer, or the Head of Analytics at your company.</p>
-<p>Sections required in your report:</p>
-<ul>
-<li>Main objective of the analysis that also specifies whether your model will be focused on a specific type of Deep Learning or Reinforcement Learning algorithm and the benefits that your analysis brings to the business or stakeholders of this data. <strong>Done</strong></li>
-<li>Brief description of the data set you chose, a summary of its attributes, and an outline of what you are trying to accomplish with this analysis. <strong>Done</strong></li>
-<li>Brief summary of data exploration and actions taken for data cleaning or feature engineering. <strong>Done</strong></li>
-<li>Summary of training at least three variations of the Deep Learning model you selected. For example, you can use different clustering techniques or different hyperparameters. <strong>Done</strong></li>
-<li>A paragraph explaining which of your Deep Learning models you recommend as a final model that best fits your needs in terms of accuracy or explainability. <strong>Done</strong></li>
-<li>Summary Key Findings and Insights, which walks your reader through the main findings of your modeling exercise. <strong>Done</strong></li>
-<li>Suggestions for next steps in analyzing this data, which may include suggesting revisiting this model or adding specific data features to achieve a better model. <strong>Done</strong></li>
-</ul>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>We will be using a dataset of 525 different bird species that has been gathered from a variety of internet sources. The dataset contains 84,365 images (on average 160 images per species, before cleaning) that can be used to train the model, an additional 2,625 images in a validation set (5 per species) and a final 2,625 images in a hidden test set. The first two sets of images will be used to train and validate our model, while the test set will only be used at the end of the process to confirm model performance. Most of the images are sized 224x224 using RGB channels and have been stored in JPG format. Our investigation into the data revealed there were cases with odd sizes and ratios. More on that in the next section.</p>
+<p>The data is available to download from <a href="https://huggingface.co/datasets/chriamue/bird-species-dataset">Hugging Face</a>. It was originally uploaded to Kaggle but is no longer available there (details and links on the Hugging Face page for the dataset).</p>
+<p>With this analysis and model development exercise we will attempt to create an image classifier for these 525 bird species. Of course, even with 525 species, our model might be limited in identifying bird species due to the vast ecological diversity and potential lack of representation in the training dataset. However, we believe that this approach is an important first step and can hopefully be expanded in future releases once we are able to get our hands on more data and images for additional species.</p>
+</section>
+<section id="data-exploration-and-data-cleaning" class="level2">
+<h2 class="anchored" data-anchor-id="data-exploration-and-data-cleaning">Data Exploration and Data Cleaning</h2>
+<p>Before we begin developing models, we spend time exploring and cleaning the data, to ensure we remove duplicates and bad quality images to avoid causing performance issues for our models. We run this analysis across all three sets of data, namely train/validation/test. The train portion is cleaned to improve model performance while validation and test are cleaned to ensure our metrics represent the actual capabilities of the model.</p>
+<p>To identify exact or near duplicates, low information and odd photos, we leverage the <a href="https://github.com/cleanlab/cleanvision">cleanvision</a> library. Cleanvision managed to identify potential issues with 220 images across the three splits of the data. There were 211 images which were tagged as having odd size, 7 that were blurry, 2 that were near duplicates (one duplicate) and one image with an odd aspect ratio (same as one of the images flagged with odd size, therefore 221 issues affecting 220 images).</p>
+<p>The size issue mostly lies with images for a particular bird species, plush crested jays (only in train and validation splits, while test is normal), with only one image coming from the loggerhead shrike. We will resize all images to 224x224 as part of our image transformations anyways so this is not expected to be an issue. We will investigate performance of the final model on the test set for that species. On the single image of the loggerhead shrike, we observe that this is actually smaller than 224x224 but we do not expect performance issues considering the dataset size.</p>
+<p>We reviewed the images classified as blurry and observed no noticeable blur that would affect model performance post finetuning. Finally, there is a picture of the same bird identified as both a band tailed guan (train/055) and a blue throated piping guan (train/152). Inspection of the data revealed the correct label is blue throated piping guan, therefore the first instance was removed.</p>
+<p>In an initial attempt to perform data augmentation, we will also define transforms of the data that would flip or rotate the images every time a batch is fed into the model during training. We note that further enhancements in terms of data augmentations will be investigated in future versions of the model, where we will attempt to emulate weather conditions, such as foggy images. For this instance of the model we will try to make it robust to the various angles of the pictures taken by the app users.</p>
+</section>
+<section id="deep-learning-models---image-classification-algorithms" class="level2">
+<h2 class="anchored" data-anchor-id="deep-learning-models---image-classification-algorithms">Deep Learning Models - Image Classification Algorithms</h2>
+<p>In this section, we explore different vision model architectures as well as different size variants for each architecture to compare and benchmark accuracy, prediction time and model size, all of which are important factors to consider when we intend to put that model to production. We will explore variants of ResNet, EfficientNet and ConvNeXt models.</p>
+<p>All above model architectures have already been trained extensively on the ImageNet dataset, which already contains different types of birds. Therefore, instead of starting from scratch, we will aim to finetune these models from available checkpoints, with the assumption that the model will have already come up with bird-related features in its initial training phase. In the ResNet section, we will test that assumption on the ResNet34 variant by training a version from zero as well as finetuning.</p>
+<p>For each attempt at finetuning, we apply the image transforms that were used in the initial training of the model. These steps are available when loading the model weights through torchvision. For the ResNet34 that was trained from the beginning on this dataset, we mimic the transforms that were used in the original ResNet training. Additionally, to improve model performance, augmentations to the original images were considered and applied during training on each batch. This means that each batch was randomly modified at training time (different augmentations potentially applied each epoch) to make the model more robust and reduce overfitting. Augmentations applied were random horizontal flipping, perspective, rotation and affine transformations. Finally, different learning rate regiments were tested and it was chosen to apply one-cycle policy to adjust the learning rate over the training procedure, while overall the AdamW optimizer was used in every training scenario. These settings seemed to materially improve model performance in terms of accuracy on the validation dataset by a couple percentage points.</p>
+<p>Pretrained models are finetuned for two epochs where only the final/classifier layer is trained and then for a further ten epochs. Model weights are saved for each epoch so that we can use the weights that achieve best performance on the validation dataset, in case after a few epochs the model overfits the training data and performance on validation data degrades.</p>
+<p>In the following subsections, we will present the performance of these models. We report on the best accuracy on the validation dataset for each epoch (pretrained models were trained for 2 warm-up epochs and 10 additional epochs where all parameters were unfrozen), the size of the weights in Mbs and the average inference time for a single image in seconds. The average inference time was calculated by getting the average of the inference time for the validation dataloader and dividing that time by the size of the validation dataset (2625 images).</p>
+<section id="resnet" class="level3">
+<h3 class="anchored" data-anchor-id="resnet">ResNet</h3>
+<p>You can check below table for the different variations of ResNet that were trained and best performance achieved, in terms of accuracy. Average prediction time and model size are also presented.</p>
+<table class="table">
+<colgroup>
+<col style="width: 27%">
+<col style="width: 21%">
+<col style="width: 22%">
+<col style="width: 28%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Model</strong></th>
+<th><strong>Accuracy (Best)</strong></th>
+<th><strong>Weight Size (Mb)</strong></th>
+<th><strong>Avg Inference Time (s)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ResNet18</td>
+<td>94.12%</td>
+<td>45.78</td>
+<td>0.012</td>
+</tr>
+<tr class="even">
+<td>ResNet34 (no-pretraining)</td>
+<td>91.2%</td>
+<td>86.22</td>
+<td>0.023</td>
+</tr>
+<tr class="odd">
+<td>ResNet34</td>
+<td>94.27%</td>
+<td>86.22</td>
+<td>0.023</td>
+</tr>
+<tr class="even">
+<td>ResNet50</td>
+<td>94.61%</td>
+<td>98.34</td>
+<td>0.036</td>
+</tr>
+</tbody>
+</table>
+<p>First of all, we can compare accuracy between the two versions of ResNet34 that we trained. We can see that the one that was trained from scratch does not achieve the same level of performance and actually underperforms all variants. Therefore, going forward only pretrained models for all architectures will be considered. In addition, we can see from the table that performance peaks around 94% for all ResNet models and does not materially improve with larger variants. Our proposal would be to use the smallest variant, ResNet18, as a candidate from this family of models, considering it performs almost the same as ResNet34 and is only less accurate by 0.5% when compared against ResNet50. Achieving small model size and faster inference time with a small sacrifice of accuracy is desirable and we can see that inference for a single image doubles and triples as we go larger in size.</p>
+</section>
+<section id="efficientnet" class="level3">
+<h3 class="anchored" data-anchor-id="efficientnet">EfficientNet</h3>
+<p>There are many variants of the original EfficientNet model ranging from B0 to B07. For this exercise the first three (B0, B1, B2) were considered. The table below summarizes the results:</p>
+<table class="table">
+<colgroup>
+<col style="width: 27%">
+<col style="width: 21%">
+<col style="width: 22%">
+<col style="width: 28%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Model</strong></th>
+<th><strong>Accuracy (Best)</strong></th>
+<th><strong>Weight Size (Mb)</strong></th>
+<th><strong>Avg Inference Time (s)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>EfficientNet B0</td>
+<td>96.09%</td>
+<td>18.72</td>
+<td>0.015</td>
+</tr>
+<tr class="even">
+<td>EfficientNet B1</td>
+<td>96.1%</td>
+<td>28.74</td>
+<td>0.025</td>
+</tr>
+<tr class="odd">
+<td>EfficientNet B2</td>
+<td>97.54%</td>
+<td>33.76</td>
+<td>0.039</td>
+</tr>
+</tbody>
+</table>
+<p>We can immediately see that EfficientNet seems to perform slightly better than ResNet, as even the smallest model, B0, is able to outperform ResNet50 (the largest we tested). Inference time are comparably increasing as a larger architecture is used and it is only slightly higher than the time achieved by ResNet. Finally, parameter size is quite smaller, the largest EfficientNet (B2) that we tried is smaller in size than the smallest ResNet. Our initial conclusion is that for a very immaterial increase in inference time, EfficientNet is a more appropriate architecture compared to ResNets. We can achieve impressive accuracy even with the smallest variants.</p>
+</section>
+<section id="resnext" class="level3">
+<h3 class="anchored" data-anchor-id="resnext">ResNeXt</h3>
+</section>
+</section>
+<section id="findings" class="level2">
+<h2 class="anchored" data-anchor-id="findings">Findings</h2>
+<p>Does the report include a clear and well presented section with key findings related to the main objective(s) of the analysis? A paragraph explaining which of your Deep Learning models you recommend as a final model that best fits your needs in terms of accuracy or explainability. Summary Key Findings and Insights, which walks your reader through the main findings of your modeling exercise. (maybe in Conclusion section??)</p>
+</section>
+<section id="flaws-and-future-improvements" class="level2">
+<h2 class="anchored" data-anchor-id="flaws-and-future-improvements">Flaws and Future Improvements</h2>
+<p>So far, we have briefly touched upon some of the potential flaws in our model development strategy. In this section we will reiterate and propose venues of future remediation.</p>
+<p>Firstly, our model was trained on a set of images for</p>
+<p>Does the report highlight possible flaws in the model and a plan of action to revisit this analysis with additional data or different modeling techniques? Suggestions for next steps in analyzing this data, which may include suggesting revisiting this model or adding specific data features to achieve a better model. (maybe in Conclusion section??)</p>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Summary Key Findings and Insights, which walks your reader through the main findings of your modeling exercise. Suggestions for next steps in analyzing this data, which may include suggesting revisiting this model or adding specific data features to achieve a better model.</p>
 </section>
 
 </main>
