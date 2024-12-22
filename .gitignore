@@ -12,3 +12,5 @@ wheels/
 
 # Data folders
 deep_learning/data
+unsupervised/data
+classification/data
