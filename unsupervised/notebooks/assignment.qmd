@@ -402,17 +402,113 @@ inertia_df = pl.DataFrame({"clusters":clusters, "inertia": inertia, "silhouette"
 )
 ```
 
-We can see that from the silhouette coefficient plot that three clusters seem to work best, although two also seem like viable options. The coefficient is the mean of the silhouette coefficient, which compares the distance of a point to other instances of the same cluster, against the distance of the point to instances of the next closest cluster. We can use the silhouette score as a metric to help us select the most appropriate clustering algorithm, but we have to keep in mind that the silhouette score tends to be higher for 
+We can see that from the silhouette coefficient plot that three clusters seem to work best, although two also seem like viable options. The coefficient is the mean of the silhouette sample, which compares the distance of a point to other instances of the same cluster, against the distance of the point to instances of the next closest cluster. We can also use the silhouette coefficient across our analysis as a metric to help us select the most appropriate clustering algorithm, but we have to keep in mind that it tends to be higher for convex clusters such as those produced by K-Means, compared to density based clusters as those produced by DBSCAN.
+
+Before moving on to the next algorithm, let us also plot the clusters against the data points to see how well the data is separated. To visualize the data in two dimensions, we will also make use of a dimensionality reduction technique, in this case PCA, to 
+
+```{python}
+#| echo: false
+from sklearn.decomposition import PCA, KernelPCA
+
+pca = KernelPCA(n_components = 2, kernel='rbf').set_output(transform = 'polars')
+#pca = PCA(n_components = 2).set_output(transform = 'polars')
+
+X_pca = pca.fit_transform(X)
+
+RANDOM_SEED = 25
+kmeans = KMeans(n_clusters=3, random_state=RANDOM_SEED)
+kmeans.fit(X)
+
+kmeans.labels_
+
+X_pca = X_pca.with_columns(labels = pl.Series(kmeans.labels_))
 
 
+```
 
+```{python}
+#| echo: false
+from sklearn.manifold import TSNE
 
+#pca = KernelPCA(n_components = 2, kernel='rbf').set_output(transform = 'polars')
+tsne = TSNE(n_components = 2).set_output(transform = 'polars')
+
+X_tsne = tsne.fit_transform(X)
+
+RANDOM_SEED = 25
+kmeans = KMeans(n_clusters=3, random_state=RANDOM_SEED)
+kmeans.fit(X)
+
+kmeans.labels_
+
+X_tsne = X_tsne.with_columns(labels = pl.Series(kmeans.labels_))
+
+X_tsne
+
+```
+
+```{python}
+(
+    ggplot(X_tsne, aes(x='tsne0', y='tsne1', colour='labels')) + 
+    geom_point()
+)
+```
+
+```{python}
+(
+    ggplot(X_pca, aes(x='pca0', y='pca1', colour='labels')) + 
+    geom_point()
+)
+```
+
+```{python}
+#| echo: false
+
+(
+    ggplot(X_pca, aes(x='kernelpca0', y='kernelpca1', colour='labels')) + 
+    geom_point()
+)
+
+```
 
 DBScan
 
+```{python}
+
+from sklearn.cluster import DBSCAN
+
+dbscan = DBSCAN(eps = 8, min_samples = 10, metric='euclidean')
+
+dbscan.fit(X)
+
+np.mean(dbscan.labels_)
+
+dbscan.labels_
+
+X_tsne = X_tsne.with_columns(labels = pl.Series(dbscan.labels_))
+
+(
+    ggplot(X_tsne, aes(x='tsne0', y='tsne1', colour='labels')) + 
+    geom_point()
+)
+
+```
+
+```{python}
+X_pca = X_pca.with_columns(labels = pl.Series(dbscan.labels_))
+
+(
+    ggplot(X_pca, aes(x='kernelpca0', y='kernelpca1', colour='labels')) + 
+    geom_point()
+)
+
+```
+
+
+
 - Summary of training at least three variations of the unsupervised model you selected. For example, you can use different clustering techniques or different hyperparameters. __Pending__
 - Does the report include a section with variations of Unsupervised Learning models and specifies which one is the model that best suits the main objective(s) of this analysis? __Pending__
--Does the report include a section with variations of Unsupervised Learning models and which one is the model that best suits the main objectives of this analysis?
+
 Yes, there are at least 3 different models. One of them is presented as the better alternative, and some findings are presented.
 
 
