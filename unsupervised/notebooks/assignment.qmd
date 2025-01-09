@@ -1,0 +1,441 @@
+---
+title: "Unsupervised Learning Assignment - Customer Personality Analysis"
+format: 
+    pdf: default
+    html:
+        embed-resources: true
+---
+
+## Overview - Main objective
+
+We are working for a company that owns and manages a grocery store and we are part of its data analytics division that supports various functions such as marketing, purchasing and warehousing. The head of the analytics department has assigned us a project from the marketing team, to identify different customer personality clusters, in other words to segment clients in terms of their purchases and shopping habits. The goal of this analysis is to help the company better understand its customers and allow the marketing team to better promote products to specific client types. It also makes it easier for the business to understand the needs, behaviours and concerns of the respective customer segments and more easily modify the product line.  
+
+For this analysis, we will leverage various unsupervised learning techniques that will allow us to cluster the customers in groups.  The aim is to find which model will produce reasonable segments that the marketing team will be able to act upon, by creating more personalized suggestions. The main objective of this report is to provide an overview of the data that was used for this analysis, go through the steps taken to clean, analyze and understand the data, the models that were trained and how these were compared against each other as well as our final recommendation towards the head of analytics and the marketing team. The rest of the report is structured as follows: the next two sections describe a) the data used for this analysis and b) the steps taken to clean and analyze the data. This will allow us to anticipate potential issues with our data and treat them accordingly so that we can prepare it for our clustering algorithms. Potential hypotheses about the data will be presented and their validity will be reviewed in the following sections. Then we will provide details on the different clustering algorithms that were used in our analysis and compare their benefits and shortcomings. Finally, our findings are presented and potential flaws are recognized, including suggestions for future research.  
+
+## Data
+
+For this analysis, we leverage data on customer personality that can be found [here](https://www.kaggle.com/datasets/imakash3011/customer-personality-analysis/data). There are entries about 2240 customers, each one identified by a unique ID in the dataset. For each customer, a variety of data is available, spread across 28 columns. Information includes year of birth, number of kids at home (and at what relative age, e.g. kids, teens, etc.), marital status, level of education, income and various metrics on purchase habits such as amount of meat/fruits/vegetables/etc. bought. See below a complete data dictionary:
+
+- __People__  
+ID: Customer's unique identifier  
+Year_Birth: Customer's birth year  
+Education: Customer's education level  
+Marital_Status: Customer's marital status  
+Income: Customer's yearly household income  
+Kidhome: Number of children in customer's household  
+Teenhome: Number of teenagers in customer's household  
+Dt_Customer: Date of customer's enrollment with the company  
+Recency: Number of days since customer's last purchase  
+Complain: 1 if the customer complained in the last 2 years, 0 otherwise  
+
+- __Products__  
+MntWines: Amount spent on wine in last 2 years  
+MntFruits: Amount spent on fruits in last 2 years  
+MntMeatProducts: Amount spent on meat in last 2 years  
+MntFishProducts: Amount spent on fish in last 2 years  
+MntSweetProducts: Amount spent on sweets in last 2 years  
+MntGoldProds: Amount spent on gold in last 2 years  
+
+- __Promotion__  
+NumDealsPurchases: Number of purchases made with a discount  
+AcceptedCmp1: 1 if customer accepted the offer in the 1st campaign, 0 otherwise  
+AcceptedCmp2: 1 if customer accepted the offer in the 2nd campaign, 0 otherwise  
+AcceptedCmp3: 1 if customer accepted the offer in the 3rd campaign, 0 otherwise  
+AcceptedCmp4: 1 if customer accepted the offer in the 4th campaign, 0 otherwise  
+AcceptedCmp5: 1 if customer accepted the offer in the 5th campaign, 0 otherwise  
+Response: 1 if customer accepted the offer in the last campaign, 0 otherwise  
+
+- __Place__  
+NumWebPurchases: Number of purchases made through the company’s website  
+NumCatalogPurchases: Number of purchases made using a catalogue  
+NumStorePurchases: Number of purchases made directly in stores  
+NumWebVisitsMonth: Number of visits to company’s website in the last month  
+
+We note that the data is almost fully complete. For 24 customers income information is not available, representing around 1% of the overall dataset. Summary statistics for all variables can be seen below, while distribution details will be covered in the following section: 
+
+__People__
+```{python}
+#| echo: false
+
+import polars as pl
+from polars import col
+from skimpy import skim_get_figure
+import polars.selectors as cs
+import datetime
+import numpy as np
+
+data = pl.read_csv("/home/kpatelis/projects/ibm_ml/unsupervised/data/marketing_campaign.csv", 
+separator='\t', try_parse_dates=True)
+
+data.select("ID", "Year_Birth", "Education", "Marital_Status", 
+"Income").describe()
+```
+```{python}
+#| echo: false
+data.select("Kidhome", "Teenhome", "Dt_Customer", "Recency", "Complain").describe()
+```
+
+__Products__
+```{python}
+#| echo: false
+data.select("MntWines", "MntFruits", "MntMeatProducts", "MntFishProducts").describe()
+```
+```{python}
+#| echo: false
+data.select("MntSweetProducts", "MntGoldProds").describe()
+```
+
+__Promotion__
+```{python}
+#| echo: false
+data.select("NumDealsPurchases", "AcceptedCmp1", "AcceptedCmp2" , "AcceptedCmp3", "AcceptedCmp4").describe()
+```
+```{python}
+#| echo: false
+data.select("AcceptedCmp5", "Response").describe()
+```
+
+__Place__
+```{python}
+#| echo: false
+data.select("NumWebPurchases", "NumCatalogPurchases", "NumStorePurchases", "NumWebVisitsMonth").describe()
+```
+
+
+## Data Exploration and Data Cleaning
+
+The high level view of our data already highlighted potential issues that we need to look into and remedy before proceeding with our modeling approach (e.g. unexpected replies in marital status). They might arise from a deficiency in the design of the data collection process, in the case of marital status the use of a text field instead of providing pre-determined answers for example.  
+
+Let us start by exploring the two categorical variables in our dataset, marital status and education. For marital status, looking at a count of the different values, we observe a few cases where unexpected answers are given (Alone, Absurd, YOLO). Alond by itself is not entirely unexpected, but the typical answer is Single.
+
+```{python}
+#| echo: false
+data.get_column("Marital_Status").value_counts(sort=True)
+```
+
+For our analysis we will recode Alone into Single and set unexpected values to Unavailable. In the next section, when we apply our modeling strategies, we assume that unexpected values also belong in the Single category.  
+
+```{python}
+#| echo: false
+data = data.with_columns(Marital_Status = pl.when(col("Marital_Status") == "Alone")
+                                     .then(pl.lit("Single"))
+                                     .when(col("Marital_Status").is_in(["Absurd", "YOLO"]))
+                                     .then(pl.lit("Unavailable"))
+                                     .otherwise(col("Marital_Status")))
+
+
+```
+
+```{python}
+#| echo: false
+from plotnine import *
+
+marital_status = (data
+                  .get_column("Marital_Status")
+                  .value_counts(sort=True)
+                  .with_columns(Marital_Status = col("Marital_Status").cast(pl.Categorical()))
+                  )
+
+(
+    ggplot(marital_status, aes("Marital_Status", "count")) +
+        geom_col() +
+        theme_light() + 
+        ggtitle("Distribution of Marital Status") + 
+        labs(x="", y="")
+)
+
+```
+
+We observe that the majority of customers in our data are either married or in a relationship, while the rest are single, divorced or widowed. We can assume that the majority of our customers shop for a household of at least two people. We will create a new variable for the total number of childen (Children = Kidhome + Teenhome) Let's check how many are the customers in each marital category have children (Children variable, recoded as Yes and No in the charts only): 
+
+```{python}
+#| echo: false
+data = data.with_columns(Children = col("Kidhome") + col("Teenhome")).with_columns(has_children = pl.when(col("Children") > 0 ).then(pl.lit("Yes")).otherwise(pl.lit("No")))
+
+married_kids = data.group_by("Marital_Status", "has_children").len().sort("len", descending=True).with_columns(Marital_Status = col("Marital_Status").cast(pl.Categorical()))
+
+(
+    ggplot(married_kids, aes("Marital_Status", "len", fill = "has_children")) +
+        geom_col() +
+        theme_light() + 
+        ggtitle("Distribution of Marital and Children Status") + 
+        labs(x="", y="", fill="Children")
+)
+
+```
+
+The majority of customers in our data have children, which is true for all categories, including those that are single. We can potentially infer that a portion of people who provide single as marital status and have children were previously in a relationship in which a child was born.  
+
+In terms of education level, half of our customers have graduated highschool, while more than one third have a Master or Phd. Less than three percent have only basic education. 
+
+```{python}
+#| echo: false
+education = (data
+                  .get_column("Education")
+                  .value_counts(sort=True)
+                  .with_columns(Education = col("Education").cast(pl.Categorical()))
+                  )
+
+(
+    ggplot(education, aes("Education", "count")) +
+        geom_col() +
+        theme_light() + 
+        ggtitle("Distribution of Education Level") + 
+        labs(x="", y="")
+)
+
+```
+
+We now turn our attention to some of the other variables in our dataset. We can calculate the Age of our customers as of today (year 2024) by subtracting the current year from the Year_Birth column. Below is the distribution of ages for our customers: 
+
+```{python}
+#| echo: false
+data = data.with_columns(Age = pl.lit(2024) - col("Year_Birth"))
+
+(
+    ggplot(data, aes("Age")) + 
+    geom_histogram(bins = 25) + 
+    ggtitle("Distribution of Customer Age")
+)
+
+```
+
+We immediately notice that there are some outliers in terms of age, some customers seem to be more than 120 years old (oldest customer is 131). We will exclude those from our dataset before we train any of our models as these ages are unlikely to be correct and might have adverse effects for our clustering strategy. Other than that, the age distribution of our customers is relatively normal, somewhat fatter on the higher end. The median age of our customers is 54 years old.  
+
+Our data includes information on the five promotional events and whether our clients accepted offers on any of them. We realize the caveat of storing data like this and using it to create customer segments is problematic, as the company will probably hold more events in the future and new clients will not have participated in previous events but might be interested in future ones. We choose to create new variables that will be used in our models, Accepted_Offers which is 1 if a customer accepted any offer in the past and 0 if they do not, as well as Mean_Offer_Accepted, which is the mean rate with which customers accept offers. This allows us to recalculate these metrics for our clientbase and include in our models new customers. One potential issue of this approach is that existing customers might exhibit different behaviour in the future, resulting in them moving from one segment to the other. This, however, is expected over the customer lifetime. It is important for the business to be able to identify when customer habits change so that marketing strategy can be adjusted.
+
+```{python}
+#| echo: false
+(data
+ .with_columns(Total_Accepted_Offers = col("AcceptedCmp1") + col("AcceptedCmp2") + col("AcceptedCmp3") + col("AcceptedCmp4") + col("AcceptedCmp5"))
+ .with_columns(Accepted_Offers = pl.when(col("Total_Accepted_Offers") > 0).then(pl.lit(1)).otherwise(pl.lit(0)), Mean_Accepted_Offers = col("Total_Accepted_Offers") / 5.0)
+)
+```
+
+Next, we check spending habits of our customers in terms of how they purchase products and on what types of products they spend on. Since we have aggregate spending habits of customers, we realized that for existing customers the spending is only going to increase or remain the same, while new customers will have lower overall spending. For use in modeling, we will create new variables based on the frequency that a customer buys from store, online or via catalog, as well as based on the percentage of overall spending a customer assigns to various categories (e.g. Meat, Wine, Fish, etc). We will also create a variable to account for the amount of time a customer has been with the company based on the Dt_Customer column, as well as the percentage of a customer's spending in terms of their overall income
+
+```{python}
+#| echo: false
+data = (data
+        .with_columns(Total_Amount = col("MntWines") + col("MntFruits") + col("MntMeatProducts") + col("MntFishProducts") + col("MntSweetProducts") + col("MntGoldProds"), 
+                      Total_Purchases = col("NumWebPurchases") + col("NumCatalogPurchases") + col("NumStorePurchases") + col("NumDealsPurchases"))
+        .with_columns(Perc_Wine = col("MntWines") / col("Total_Amount"), 
+                      Perc_Fruit = col("MntFruits") / col("Total_Amount"), 
+                      Perc_Meat = col("MntMeatProducts") / col("Total_Amount"), 
+                      Perc_Fish = col("MntFishProducts") / col("Total_Amount"), 
+                      Perc_Sweet = col("MntSweetProducts") / col("Total_Amount"), 
+                      Perc_Gold = col("MntGoldProds") / col("Total_Amount"), 
+                      Freq_Web = col("NumWebPurchases") / col("Total_Purchases"), 
+                      Freq_Deals = col("NumDealsPurchases") / col("Total_Purchases"), 
+                      Freq_Store = col("NumStorePurchases") / col("Total_Purchases"), 
+                      Freq_Catalog = col("NumCatalogPurchases") / col("Total_Purchases"))
+        .with_columns(
+            Freq_Web = pl.when(col("Freq_Web").is_nan()).then(pl.lit(0)).otherwise(col("Freq_Web")), 
+            Freq_Deals = pl.when(col("Freq_Deals").is_nan()).then(pl.lit(0)).otherwise(col("Freq_Deals")), 
+            Freq_Store = pl.when(col("Freq_Store").is_nan()).then(pl.lit(0)).otherwise(col("Freq_Store")), 
+            Freq_Catalog = pl.when(col("Freq_Catalog").is_nan()).then(pl.lit(0)).otherwise(col("Freq_Catalog"))
+        )
+        )
+```
+
+```{python}
+#| echo: false
+
+products = (data
+            .select("ID", "Marital_Status", cs.starts_with("Mnt"))
+            .unpivot(on = cs.starts_with("Mnt"), index=["ID", "Marital_Status"], variable_name="products", value_name="value")
+            .group_by("Marital_Status", "products").agg(col("value").sum())
+            .sort("value", descending=True)
+            .with_columns(Marital_Status = col("Marital_Status").cast(pl.Categorical()))
+)
+
+(
+    ggplot(products, aes("Marital_Status", "value", fill = "products")) + 
+    geom_col() + 
+    theme_bw() + 
+    ggtitle("Distribution of Purchase Types by Marital Status") + 
+    labs(x="", y="")
+)
+
+```
+
+We note that majority of spending is on wine and then meat products across all types of customers in terms of marital status.
+
+```{python}
+#| echo: false
+
+purchases = (data
+            .select("ID", "Marital_Status", cs.starts_with("Num"))
+            .drop("NumWebVisitsMonth")
+            .unpivot(on = (cs.starts_with("Num")), index=["ID", "Marital_Status"], variable_name="purchases", value_name="value")
+            .group_by("Marital_Status", "purchases").agg(col("value").sum())
+            .sort("value", descending=True)
+            .with_columns(Marital_Status = col("Marital_Status").cast(pl.Categorical()))
+)
+
+(
+    ggplot(purchases, aes("Marital_Status", "value", fill = "purchases")) + 
+    geom_col() + 
+    theme_bw() + 
+    ggtitle("Distribution of Purchase Methods by Marital Status") + 
+    labs(x="", y="")
+)
+
+```
+
+In terms of how customers prefer to purchase their products, most purchases are done directly at the store, while web purchases are also popular across all customer groups (in terms of marital status).  
+
+Finally, we check the income distribution and note that a small number of customers has quite higher income compared to the rest. We will try to normalize such outliers by using the logarithm of income going forward.
+
+```{python}
+(
+    ggplot(data, aes(x = "Income")) + 
+    geom_histogram(bins = 30) + 
+    ggtitle("Income Distribution") + 
+    labs(x="", y="")
+)
+```
+
+```{python}
+(
+    ggplot(data.with_columns(Income = col("Income").log()), aes(x = "Income")) + 
+    geom_histogram(bins = 30) + 
+    ggtitle("Log Income Distribution") + 
+    labs(x="", y="")
+)
+```
+
+In addition to the data cleaning and feature engineering that was discussed, we also replace the income of the customers where that information is missing with the median value across the dataset (before filtering out customers above 100 years old). We also drop variables Z_CostContact and Z_Revenue as they have zero variance and provide no benefit. Categorical variables of marital status and education will be one-hot-encoded. 
+
+```{python}
+#| echo: False
+data = (data
+        .with_columns(Income = pl.when(col("Income").is_null())
+                                 .then(col("Income").median())
+                                 .otherwise(col("Income")))
+        .filter(col("Age") <= 100)
+        .with_columns(Marital_Status = pl.when(col("Marital_Status") == "Unavailable")
+                                     .then(pl.lit("Single"))                                     .otherwise(col("Marital_Status")), 
+                      Log_Income = col("Income").log(), 
+                      Years_Customer = (datetime.date.today() - col("Dt_Customer")))
+        .with_columns(Years_Customer = col("Years_Customer").dt.total_days() // 365)
+
+)
+```
+
+```{python}
+#| echo: false
+model_vars = ["Education", "Marital_Status", "Children", "Recency", "Complain", 
+              "Response", "Age", "Perc_Wine", "Perc_Fruit", "Perc_Meat", 
+              "Perc_Fish", "Perc_Sweet", "Perc_Gold", "Freq_Web", "Freq_Deals", 
+              "Freq_Store", "Freq_Catalog", "Log_Income", "Years_Customer"]
+
+df = data.select(*model_vars)
+```
+
+## Unsupervised Learning Models - Clustering Algorithms
+
+We will examine three different popular clustering algorithms, KMeans, DBSCAN, and Agglomerative Clustering that have been successfully used in many different domains. For the KMeans algorithm we will also look into methods that would point us towards the number of customer clusters, while DBSCAN can automatically come up with the appropriate number. In all cases, our data will be normalized and the categorical variables will be one-hot-encoded. 
+
+```{python}
+#| echo: false
+
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import make_column_transformer
+
+numerical_columns = df.select(cs.numeric()).columns
+categorical_columns = df.select(cs.string()).columns
+
+transform_vars = make_column_transformer(
+    (StandardScaler(), numerical_columns),
+    (OneHotEncoder(), categorical_columns)
+    )
+
+X = transform_vars.fit_transform(df)
+```
+
+### KMeans
+
+First, we explore the KMeans algorithm, where we need to define the number of clusters. Sometimes, depending on the domain or problem at hand, we are able to ascertain the number of clusters beforehand. When that is not the case, there are a couple techniques that are typically used to identify the appropriate number, such as the the elbow method, which relies on identifying the number of clusters up to which inertia drops at a faster rate, or such as using the  silhouette score. See below plots of the inertia and silhouette score against the number of clusters:  
+
+```{python}
+#| echo: false
+
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score, silhouette_samples
+
+clusters = []
+inertia = []
+silhouette = []
+
+RANDOM_SEED = 25
+for n_clusters in range(2,21):
+    kmeans = KMeans(n_clusters=n_clusters, random_state=RANDOM_SEED)
+    kmeans.fit(X)
+    clusters.append(n_clusters)
+    inertia.append(kmeans.inertia_)
+    silhouette.append(silhouette_score(X, kmeans.labels_))
+
+inertia_df = pl.DataFrame({"clusters":clusters, "inertia": inertia, "silhouette":silhouette})
+
+```
+
+```{python}
+#| echo: false
+
+(
+    ggplot(inertia_df, aes(x="clusters", y="inertia")) + 
+    geom_point() + 
+    geom_line() + 
+    labs(x = "Number of Clusters", y = "Inertia")
+)
+```
+
+```{python}
+#| echo: false
+
+(
+    ggplot(inertia_df, aes(x="clusters", y="silhouette")) + 
+    geom_point() + 
+    #geom_line() + 
+    labs(x = "Number of Clusters", y = "Silhouette Coefficient")
+)
+```
+
+We can see that from the silhouette coefficient plot that three clusters seem to work best, although two also seem like viable options. The coefficient is the mean of the silhouette coefficient, which compares the distance of a point to other instances of the same cluster, against the distance of the point to instances of the next closest cluster. We can use the silhouette score as a metric to help us select the most appropriate clustering algorithm, but we have to keep in mind that the silhouette score tends to be higher for 
+
+
+
+
+
+DBScan
+
+- Summary of training at least three variations of the unsupervised model you selected. For example, you can use different clustering techniques or different hyperparameters. __Pending__
+- Does the report include a section with variations of Unsupervised Learning models and specifies which one is the model that best suits the main objective(s) of this analysis? __Pending__
+-Does the report include a section with variations of Unsupervised Learning models and which one is the model that best suits the main objectives of this analysis?
+Yes, there are at least 3 different models. One of them is presented as the better alternative, and some findings are presented.
+
+
+## Findings
+
+- Does the report include a clear and well presented section with key findings related to the main objective(s) of the analysis? __Pending__
+- A paragraph explaining which of your Unsupervised Learning models you recommend as a final model that best fits your needs in terms. __Pending__
+- Summary Key Findings and Insights, which walks your reader through the main findings of your modeling exercise. __Pending__
+
+- Does the report include a clear and well presented section with key findings about the problem and next steps?
+
+Yes. Takeaways and findings derived from the model are well presented. The quality of insights or the next steps section award this section an extra point.
+
+## Flaws and Future Improvements
+
+- Does the report highlight possible flaws in the model and a plan of action to revisit this analysis with additional data or different modeling techniques? __Pending__
+
+
+- Does the report highlight possible flaws in the model and a plan of action to revisit this analysis with additional data or different predictive modeling techniques? 
+
+Yes. There is a comprehensive list of possible flaws of this model and a detailed plan to revisit this with additional data or different predictive modeling techniques. The quality of this section awards it an extra point.
+
+## Conclusion
+
+- Summary Key Findings and Insights, which walks your reader through the main findings of your modeling exercise. __Pending__
+- Suggestions for next steps in analyzing this data, which may include suggesting revisiting this model or adding specific data features to achieve a better model. __Pending__
