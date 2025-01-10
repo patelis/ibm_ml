@@ -206,7 +206,7 @@ Our data includes information on the five promotional events and whether our cli
 
 ```{python}
 #| echo: false
-(data
+data = (data
  .with_columns(Total_Accepted_Offers = col("AcceptedCmp1") + col("AcceptedCmp2") + col("AcceptedCmp3") + col("AcceptedCmp4") + col("AcceptedCmp5"))
  .with_columns(Accepted_Offers = pl.when(col("Total_Accepted_Offers") > 0).then(pl.lit(1)).otherwise(pl.lit(0)), Mean_Accepted_Offers = col("Total_Accepted_Offers") / 5.0)
 )
@@ -319,29 +319,48 @@ data = (data
                       Log_Income = col("Income").log(), 
                       Years_Customer = (datetime.date.today() - col("Dt_Customer")))
         .with_columns(Years_Customer = col("Years_Customer").dt.total_days() // 365)
+        .with_columns(Education = pl.when(col("Education").is_in(["Basic", "2n Cycle"]))
+                                    .then(pl.lit("Undergrad"))
+                                    .when(col("Education").is_in(["Master", "PhD"]))
+                                    .then(pl.lit("Postgrad"))
+                                    .when(col("Education") == "Graduation")
+                                    .then(pl.lit("Grad"))
+                                    )
 
 )
+
+data = data.filter(col("Income") < 600000)
 ```
 
 ```{python}
 #| echo: false
-model_vars = ["Education", "Marital_Status", "Children", "Recency", "Complain", 
-              "Response", "Age", "Perc_Wine", "Perc_Fruit", "Perc_Meat", 
-              "Perc_Fish", "Perc_Sweet", "Perc_Gold", "Freq_Web", "Freq_Deals", 
-              "Freq_Store", "Freq_Catalog", "Log_Income", "Years_Customer"]
+model_vars = ["Education", "Marital_Status", "Children", "Income", 
+              "MntWines", "MntFruits", "MntMeatProducts", "MntFishProducts", 
+              "MntSweetProducts", "MntGoldProds", "NumDealsPurchases", 
+              "NumWebPurchases", "NumCatalogPurchases", "NumStorePurchases", 
+              "NumWebVisitsMonth", "Age", "Years_Customer", "Recency", #"Complain", "Response", "has_children", 
+              "Mean_Accepted_Offers", "Accepted_Offers"
+              #"Perc_Wine", "Perc_Fruit", "Perc_Meat", "Perc_Fish", "Perc_Sweet", "Perc_Gold", 
+              # "Freq_Web", "Freq_Deals", "Freq_Store", "Freq_Catalog", 
+              ]
 
 df = data.select(*model_vars)
 ```
 
+
 ## Unsupervised Learning Models - Clustering Algorithms
 
-We will examine three different popular clustering algorithms, KMeans, DBSCAN, and Agglomerative Clustering that have been successfully used in many different domains. For the KMeans algorithm we will also look into methods that would point us towards the number of customer clusters, while DBSCAN can automatically come up with the appropriate number. In all cases, our data will be normalized and the categorical variables will be one-hot-encoded. 
+We will examine three different popular clustering algorithms, KMeans, DBSCAN, and Agglomerative Clustering that have been successfully used in many different domains. For the KMeans algorithm we will also look into methods that would point us towards the number of customer clusters, while DBSCAN can automatically come up with the appropriate number. In all cases, our data will be normalized and the categorical variables will be one-hot-encoded. To reduce the impact from correlated variables and reduce the number of variables we have to work with, we will also be using the t-SNE dimensionality reduction technique. The aim of this analysis is to find the most appropriate clustering algorithm, so we will not spend additional time examining different dimensionality reduction techniques. That can be a future extension of the project.  
 
 ```{python}
 #| echo: false
 
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import make_column_transformer
+from sklearn.decomposition import PCA, KernelPCA
+from sklearn.manifold import TSNE
+
+tsne = TSNE(n_components = 2).set_output(transform = 'polars')
 
 numerical_columns = df.select(cs.numeric()).columns
 categorical_columns = df.select(cs.string()).columns
@@ -352,6 +371,7 @@ transform_vars = make_column_transformer(
     )
 
 X = transform_vars.fit_transform(df)
+X = tsne.fit_transform(X)
 ```
 
 ### KMeans
@@ -397,87 +417,47 @@ inertia_df = pl.DataFrame({"clusters":clusters, "inertia": inertia, "silhouette"
 (
     ggplot(inertia_df, aes(x="clusters", y="silhouette")) + 
     geom_point() + 
-    #geom_line() + 
-    labs(x = "Number of Clusters", y = "Silhouette Coefficient")
+    geom_line() + 
+    labs(x = "Number of Clusters", y = "Silhouette Coefficient", 
+        title="Silhouette Coefficient by cluster number for K-Means")
 )
 ```
 
 We can see that from the silhouette coefficient plot that three clusters seem to work best, although two also seem like viable options. The coefficient is the mean of the silhouette sample, which compares the distance of a point to other instances of the same cluster, against the distance of the point to instances of the next closest cluster. We can also use the silhouette coefficient across our analysis as a metric to help us select the most appropriate clustering algorithm, but we have to keep in mind that it tends to be higher for convex clusters such as those produced by K-Means, compared to density based clusters as those produced by DBSCAN.
 
-Before moving on to the next algorithm, let us also plot the clusters against the data points to see how well the data is separated. To visualize the data in two dimensions, we will also make use of a dimensionality reduction technique, in this case PCA, to 
+Before moving on to the next algorithm, let us also plot the clusters against the data points to see how well the data is separated:
 
 ```{python}
 #| echo: false
-from sklearn.decomposition import PCA, KernelPCA
 
-pca = KernelPCA(n_components = 2, kernel='rbf').set_output(transform = 'polars')
-#pca = PCA(n_components = 2).set_output(transform = 'polars')
-
-X_pca = pca.fit_transform(X)
-
-RANDOM_SEED = 25
 kmeans = KMeans(n_clusters=3, random_state=RANDOM_SEED)
 kmeans.fit(X)
+X = X.with_columns(labels = pl.Series(kmeans.labels_, dtype=pl.String()))
 
-kmeans.labels_
+(
+    ggplot(X, aes(x="tsne0", y="tsne1", colour="labels")) + 
+    geom_point() + 
+    labs(x="Dimension 1", y="Dimension 2", colour="Cluster", 
+         title="Clustering assignment based on the K-Means algorithm")
 
-X_pca = X_pca.with_columns(labels = pl.Series(kmeans.labels_))
+)
 
+```
 
+### DBSCAN
+
+DBCAN works differently compared to K-Means. In this case we do not need to define the number of clusters, the model will be able to deduce that. We only need to define the minimum number of samples in each cluster and the maximum distance between two samples for one to be considered in the neighbourhood of the other. We select the minimum number of samples to 10 and then distance to 5. See below the clusters assigned by the model:
+
+```{python}
+#| echo: false
+X = X.drop("labels")
 ```
 
 ```{python}
 #| echo: false
-from sklearn.manifold import TSNE
-
-#pca = KernelPCA(n_components = 2, kernel='rbf').set_output(transform = 'polars')
-tsne = TSNE(n_components = 2).set_output(transform = 'polars')
-
-X_tsne = tsne.fit_transform(X)
-
-RANDOM_SEED = 25
-kmeans = KMeans(n_clusters=3, random_state=RANDOM_SEED)
-kmeans.fit(X)
-
-kmeans.labels_
-
-X_tsne = X_tsne.with_columns(labels = pl.Series(kmeans.labels_))
-
-X_tsne
-
-```
-
-```{python}
-(
-    ggplot(X_tsne, aes(x='tsne0', y='tsne1', colour='labels')) + 
-    geom_point()
-)
-```
-
-```{python}
-(
-    ggplot(X_pca, aes(x='pca0', y='pca1', colour='labels')) + 
-    geom_point()
-)
-```
-
-```{python}
-#| echo: false
-
-(
-    ggplot(X_pca, aes(x='kernelpca0', y='kernelpca1', colour='labels')) + 
-    geom_point()
-)
-
-```
-
-DBScan
-
-```{python}
-
 from sklearn.cluster import DBSCAN
 
-dbscan = DBSCAN(eps = 8, min_samples = 10, metric='euclidean')
+dbscan = DBSCAN(eps = 5, min_samples = 10)
 
 dbscan.fit(X)
 
@@ -485,40 +465,212 @@ np.mean(dbscan.labels_)
 
 dbscan.labels_
 
-X_tsne = X_tsne.with_columns(labels = pl.Series(dbscan.labels_))
+X = X.with_columns(labels = pl.Series(dbscan.labels_, dtype=pl.String()))
 
 (
-    ggplot(X_tsne, aes(x='tsne0', y='tsne1', colour='labels')) + 
-    geom_point()
+    ggplot(X, aes(x='tsne0', y='tsne1', colour='labels')) + 
+    geom_point() + 
+    labs(x="Dimension 1", y="Dimension 2", colour="Cluster", 
+         title="Clustering assignment based on the K-Means algorithm")
+)
+
+```
+
+We observe that the algorithm split the data into three classes, which are clearly separable. There are also several points that received a label of -1. This means that these points are deemed as outliers by the algorithm. The algorithm seems more capable of separating the two "island" clusters that can be seen in the plot, compared to K-Means. It also identifies a small cluster of points that can be seen on the left side of the plot.The silhouette coefficient for this model is 0.226, which is less than half of K-Means at 0.478. This suggests that K-Means is more appropriate to DBSCAN. However, we already mentioned that the coefficient is generally lower for density based models such as DBSCAN. In addition, one reason for the lower score is that many points were deemed as outliers. Visually, we observe that outliers would most likely be assigned to the green cluster if we relaxed model parameters. If we assume cluster -1 points are assigned to cluster 0, then the coefficient score jumps to 0.382.
+
+```{python}
+#| echo: false
+labels = np.where(dbscan.labels_ == -1, 0, dbscan.labels_)
+silhouette_score(X, kmeans.labels_), silhouette_score(X,labels)
+silhouette_score(X, kmeans.labels_), silhouette_score(X, dbscan.labels_)
+```
+
+### Agglomerative Clustering
+
+For the hierarchical agglomerative clustering technique, we once again need to define the number of clusters. We make use of the silhouette plot to help us identify the appropriate number.
+
+```{python}
+#| echo: false
+
+from sklearn.cluster import AgglomerativeClustering
+
+clusters = []
+inertia = []
+silhouette = []
+
+RANDOM_SEED = 25
+for n_clusters in range(2,21):
+    hc = AgglomerativeClustering(n_clusters=n_clusters)
+    hc.fit(X)
+    clusters.append(n_clusters)
+    silhouette.append(silhouette_score(X, hc.labels_))
+
+silhouette_df = pl.DataFrame({"clusters":clusters, "silhouette":silhouette})
+
+```
+
+```{python}
+#| echo: false
+
+(
+    ggplot(silhouette_df, aes(x="clusters", y="silhouette")) + 
+    geom_point() + 
+    geom_line() + 
+    labs(x = "Number of Clusters", y = "Silhouette Coefficient", 
+        title="Silhouette plot for Agglomerative Clustering")
+)
+```
+
+Similar to K-Means, the most appropriate option seems to be 3 clusters, although we could also go for 5 clusters. In the following plots we present both cases. 
+
+```{python}
+#| echo: false
+
+hc = AgglomerativeClustering(n_clusters=3)
+hc.fit(X)
+X = X.with_columns(labels = pl.Series(hc.labels_, dtype=pl.String()))
+
+(
+    ggplot(X, aes(x="tsne0", y="tsne1", colour="labels")) + 
+    geom_point() + 
+    labs(x="Dimension 1", y="Dimension 2", colour="Cluster", 
+         title="Clustering assignment for Agglomerative Clustering algorithm", subtitle="3 Clusters")
+
 )
 
 ```
 
 ```{python}
-X_pca = X_pca.with_columns(labels = pl.Series(dbscan.labels_))
+#| echo: false
+
+hc = AgglomerativeClustering(n_clusters=5)
+hc.fit(X)
+X = X.with_columns(labels = pl.Series(hc.labels_, dtype=pl.String()))
 
 (
-    ggplot(X_pca, aes(x='kernelpca0', y='kernelpca1', colour='labels')) + 
-    geom_point()
+    ggplot(X, aes(x="tsne0", y="tsne1", colour="labels")) + 
+    geom_point() + 
+    labs(x="Dimension 1", y="Dimension 2", colour="Cluster", 
+         title="Clustering assignment for Agglomerative Clustering algorithm", subtitle="3 Clusters")
+
 )
 
 ```
 
+Perhaps in future analysis we will try to identify more granular customer segments, but for now we will opt for 3 instead of 5 clusters and compare against the other techniques. The silhouette coefficient when using three clusters is 0.394, somewhat lower than the K-Means score but higher compared to DBSCAN. Furthermore, this model more or less identifies one cluster that is the same as outlined by DBSCAN, while it splits into two the other large cluster identified by DBSCAN.  
 
+```{python}
+#| echo: false
+X = X.drop("labels")
+silhouette_score(X, hc.labels_)
+```
 
-- Summary of training at least three variations of the unsupervised model you selected. For example, you can use different clustering techniques or different hyperparameters. __Pending__
-- Does the report include a section with variations of Unsupervised Learning models and specifies which one is the model that best suits the main objective(s) of this analysis? __Pending__
-
-Yes, there are at least 3 different models. One of them is presented as the better alternative, and some findings are presented.
-
+In the next section we gather and summarise our findings and pick the final model to be used for customer segmentation.  
 
 ## Findings
+
+We analyzed our customer data using three different models and were able to extract useful information. All three models are able to identify at least two clearly distinct segments. Both DBSCAN and Agglomerative Clustering are able to distinguish between these two regions quite clearly, while K-Means also assigns some points from the "left" area to the cluster that we can visually see on the right, which makes us think the model is not fully capable of segmenting clients correclty. K-Means also seems to have almost linear boundaries between clusters. On the other hand, DBSCAN is only able to separate the data into two main classes, but also classifies many clients as outliers, making it difficult for us to come up with an effective marketing strategy for them. As we aim to classify all of our client base, our solution should also be able to do the same, which is why we do not think DBSCAN is a valid option.  
+
+Out of the three techniques, Agglomerative Clustering seems to be able to clearly segment our customers into groups. Visually, the groups are well defined, with no areas where clusters blend together. This approach also seems to provie meaningful clusters on a more granular level, if that is something desired in the future. Its silhouette coefficient is only slightly lower compared to K-Means, which can also be partially attributed to the fact that the score is typically higher for circular based clustering approaches. For these reasons, we believe Agglomerative Clustering to be the most appropriate algorithm.  
+
+Let us use these clusters to identify characteristics about the three customer segments identified.  
+
+```{python}
+#| echo: false
+hc = AgglomerativeClustering(n_clusters=3)
+hc.fit(X)
+data = data.with_columns(labels = pl.Series(hc.labels_, dtype=pl.String()))
+
+```
+
+The clusters seem fairly distributed.
+
+```{python}
+#| echo: false
+
+label_count = data.get_column("labels").value_counts()
+
+(
+    ggplot(label_count, aes(x="labels", y="count")) + 
+    geom_col() + 
+    theme_light() + 
+    labs(x="Clusters", y="Number of Customers", 
+         title="Distribution of Customers to Clusters")
+)
+```
+
+Next, we visualize customer income against their spending. We observe that cluster 1 is closely related mostly to customers with limited spending, as well as low income customers (not always the case). 
+
+```{python}
+#| echo: false
+(
+    ggplot(data, aes(x="Total_Amount", y="Income", colour="labels")) + 
+    geom_point() + 
+    theme_light() + 
+    labs(x="Spending", y="Income", colour="Cluster", 
+         title="Cluster Profiles Based On Income And Spending")
+)
+
+```
+
+```{python}
+#| echo: false
+(
+    ggplot(data, aes(x="labels", y="Years_Customer", colour="labels")) + 
+    geom_jitter() + 
+    theme_light()
+)
+```
+
+```{python}
+
+data.columns
+
+```
+
+```{python}
+label_count
+```
+
+```{python}
+#| echo: false
+
+group1 = data.group_by("Marital_Status", "labels").len().sort("len", descending=True).with_columns(Marital_Status = col("Marital_Status").cast(pl.Categorical()))
+
+(
+    ggplot(group1, aes("Marital_Status", "len", fill = "labels")) +
+        geom_col() +
+        theme_light() + 
+        ggtitle("Distribution of Marital and Children Status") + 
+        labs(x="", y="", fill="Children")
+)
+
+```
+
+```{python}
+#| echo: false
+
+group1 = data.group_by("Education", "labels").len().sort("len", descending=True).with_columns(Education = col("Education").cast(pl.Categorical()))
+
+(
+    ggplot(group1, aes("Education", "len", fill = "labels")) +
+        geom_col() +
+        theme_light() + 
+        ggtitle("Distribution of Marital and Children Status") + 
+        labs(x="", y="", fill="Children")
+)
+
+```
+
+```{python}
+
+data
+
+```
 
 - Does the report include a clear and well presented section with key findings related to the main objective(s) of the analysis? __Pending__
 - A paragraph explaining which of your Unsupervised Learning models you recommend as a final model that best fits your needs in terms. __Pending__
 - Summary Key Findings and Insights, which walks your reader through the main findings of your modeling exercise. __Pending__
-
-- Does the report include a clear and well presented section with key findings about the problem and next steps?
 
 Yes. Takeaways and findings derived from the model are well presented. The quality of insights or the next steps section award this section an extra point.
 
