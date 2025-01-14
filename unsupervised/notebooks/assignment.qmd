@@ -551,7 +551,7 @@ X = X.with_columns(labels = pl.Series(hc.labels_, dtype=pl.String()))
     ggplot(X, aes(x="tsne0", y="tsne1", colour="labels")) + 
     geom_point() + 
     labs(x="Dimension 1", y="Dimension 2", colour="Cluster", 
-         title="Clustering assignment for Agglomerative Clustering algorithm", subtitle="3 Clusters")
+         title="Clustering assignment for Agglomerative Clustering algorithm", subtitle="5 Clusters")
 
 )
 
@@ -571,7 +571,7 @@ In the next section we gather and summarise our findings and pick the final mode
 
 We analyzed our customer data using three different models and were able to extract useful information. All three models are able to identify at least two clearly distinct segments. Both DBSCAN and Agglomerative Clustering are able to distinguish between these two regions quite clearly, while K-Means also assigns some points from the "left" area to the cluster that we can visually see on the right, which makes us think the model is not fully capable of segmenting clients correclty. K-Means also seems to have almost linear boundaries between clusters. On the other hand, DBSCAN is only able to separate the data into two main classes, but also classifies many clients as outliers, making it difficult for us to come up with an effective marketing strategy for them. As we aim to classify all of our client base, our solution should also be able to do the same, which is why we do not think DBSCAN is a valid option.  
 
-Out of the three techniques, Agglomerative Clustering seems to be able to clearly segment our customers into groups. Visually, the groups are well defined, with no areas where clusters blend together. This approach also seems to provie meaningful clusters on a more granular level, if that is something desired in the future. Its silhouette coefficient is only slightly lower compared to K-Means, which can also be partially attributed to the fact that the score is typically higher for circular based clustering approaches. For these reasons, we believe Agglomerative Clustering to be the most appropriate algorithm.  
+Out of the three techniques, Agglomerative Clustering seems to be able to clearly segment our customers into groups. Visually, the groups are well defined, with no areas where clusters blend together. This approach also seems to provide meaningful clusters on a more granular level, if that is something desired in the future. Its silhouette coefficient is only slightly lower compared to K-Means, which can also be partially attributed to the fact that the score is typically higher for circular based clustering approaches. For these reasons, we believe Agglomerative Clustering to be the most appropriate algorithm.  
 
 Let us use these clusters to identify characteristics about the three customer segments identified.  
 
@@ -613,6 +613,8 @@ Next, we visualize customer income against their spending. We observe that clust
 
 ```
 
+We also observe that cluster 1 contains most people that have been customers for the least amount of time, typically most that have been customers less than 10 years are in that group.  
+
 ```{python}
 #| echo: false
 (
@@ -622,15 +624,7 @@ Next, we visualize customer income against their spending. We observe that clust
 )
 ```
 
-```{python}
-
-data.columns
-
-```
-
-```{python}
-label_count
-```
+However, none of our techniques seem to provide useful clusters with regards to family situation (single, couple, married, with/without children) or education level.
 
 ```{python}
 #| echo: false
@@ -641,8 +635,8 @@ group1 = data.group_by("Marital_Status", "labels").len().sort("len", descending=
     ggplot(group1, aes("Marital_Status", "len", fill = "labels")) +
         geom_col() +
         theme_light() + 
-        ggtitle("Distribution of Marital and Children Status") + 
-        labs(x="", y="", fill="Children")
+        ggtitle("Cluster Profiles and Marital Status") + 
+        labs(x="", y="", fill="Clusters")
 )
 
 ```
@@ -656,34 +650,55 @@ group1 = data.group_by("Education", "labels").len().sort("len", descending=True)
     ggplot(group1, aes("Education", "len", fill = "labels")) +
         geom_col() +
         theme_light() + 
-        ggtitle("Distribution of Marital and Children Status") + 
-        labs(x="", y="", fill="Children")
+        ggtitle("Cluster Profiles and Education Level") + 
+        labs(x="", y="", fill="Clusters")
 )
 
 ```
 
-```{python}
+Clusters 0 and 2 are mostly comprised by customers with no or at most one child, while the majority of cluster 1 one or more children typically.
 
-data
+```{python}
+#| echo: false
+
+group1 = data.group_by("Children", "labels").len().sort("len", descending=True).with_columns(Children = col("Children"))
+
+(
+    ggplot(group1, aes("Children", "len", fill = "labels")) +
+        geom_col() +
+        theme_light() + 
+        ggtitle("Cluster Profiles and Education Level") + 
+        labs(x="", y="", fill="Clusters")
+)
 
 ```
 
-- Does the report include a clear and well presented section with key findings related to the main objective(s) of the analysis? __Pending__
-- A paragraph explaining which of your Unsupervised Learning models you recommend as a final model that best fits your needs in terms. __Pending__
-- Summary Key Findings and Insights, which walks your reader through the main findings of your modeling exercise. __Pending__
+In terms of purchasing habits, cluster 2 seems to purchase more wine products, while cluster 1 purchases more gold products compared to the other clusters.
 
-Yes. Takeaways and findings derived from the model are well presented. The quality of insights or the next steps section award this section an extra point.
+```{python}
+#| echo: false
+
+group1 = data.unpivot(cs.starts_with("Mnt"), index = ["labels"]).group_by("labels", "variable").agg(pl.col("value").sum()).with_columns(freq = pl.col("value") / pl.col("value").sum().over("labels"))
+    
+(
+    ggplot(group1, aes("labels", "freq", fill = "variable")) +
+        geom_col() +
+        theme_light() + 
+        ggtitle("Cluster Profiles and Education Level") + 
+        labs(x="Clusters", y="Purchasing Percentage", fill="Product Types")
+)
+```
+
+To summarise, we believe agglomerative clustering to be the most appropriate technique, while we were able to distinguish some characteristics that define these clusters. In the next section we will discuss some of the flaws in our research and potential next steps.  
 
 ## Flaws and Future Improvements
 
-- Does the report highlight possible flaws in the model and a plan of action to revisit this analysis with additional data or different modeling techniques? __Pending__
+We were able to get some valuable insights on our customers based on our clustering analysis. However, there are a couple flaws worth highlighting.  
 
+First of all, we were not able to cluster our customer base on the basis of their demographics, primarily marital status, education level and number of chilren. This may be due to the way we encoded our variables for use in our models, typically using one-hot-encoding. In the next iteration of our study we will try different techniques, such as label encoding or frequency based encoding in combination with other variables.  
 
-- Does the report highlight possible flaws in the model and a plan of action to revisit this analysis with additional data or different predictive modeling techniques? 
-
-Yes. There is a comprehensive list of possible flaws of this model and a detailed plan to revisit this with additional data or different predictive modeling techniques. The quality of this section awards it an extra point.
+We should also aim to even better cluster our customers on the basis of their spending habits and the frequency with which they accept deals. One possible way to do this is to increase the number of clusters our models produce. We observed that agglomerative clustering is able to create well defined clusters even as we increase their number. The same was not possible with DBSCAN and seemed to have less success with K-Means. We can try to reproduce our analysis with 5 clusters. Additionally, we can try creating more sophisticated variables via feature engineering that would allow better segmentation.  
 
 ## Conclusion
 
-- Summary Key Findings and Insights, which walks your reader through the main findings of your modeling exercise. __Pending__
-- Suggestions for next steps in analyzing this data, which may include suggesting revisiting this model or adding specific data features to achieve a better model. __Pending__
+To summarise, agglomerative clustering models seem to work best at segmenting our client base. We achieve clearly defined clusters from which we are able to draw useful conclusions. These first findings are already going to be of practical use to our marketing team. We realize our models still lack sophistication to segment based on common demographics and some purchasing habits. We plan to address these open points by invetigating modifications to our agglomerative clustering model as well as improved feature engineering.  
