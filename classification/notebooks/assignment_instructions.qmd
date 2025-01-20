@@ -1,0 +1,61 @@
+---
+title: "Assignment Instructions"
+format: 
+    html:
+        embed-resources: true
+---
+
+## Grading Criteria
+
+Your peer or instructor will review your report from the perspective of a Chief Data Officer or the Head of Analytics of your team and will assess whether the Deep Learning model you selected best helped you achieve the main objective of your analysis.
+
+Yes, you are expected to leverage a wide variety of tools, but this report should focus on presenting findings, insights, and next steps. You may include some visuals from your code output, but this report is intended as a summary of your findings, not a code review. Optionally, you can submit your code as a python notebook or as a print out in the appendix of your document.
+
+The grading will center around 5 main points:
+
+- Does the report include a section describing the data?
+- Does the report include a paragraph detailing the main objective(s) of this analysis?
+- Does the report include a section with variations of Supervised Learning models and specifies which one is the model that best suits the main objective(s) of this analysis?
+- Does the report include a clear and well presented section with key findings related to the main objective(s) of the analysis?
+- Does the report highlight possible flaws in the model and a plan of action to revisit this analysis with additional data or different modeling techniques?
+
+## Instructions
+
+Make sure to include mainly insights and findings on your report. There is no need to include code, unless you want to.
+
+Required
+Once you have selected a data set, you will produce the deliverables listed below and submit them to one of your peers for review. Treat this exercise as an opportunity to produce analysis that are ready to highlight your analytical skills for a senior audience, for example, the Chief Data Officer, or the Head of Analytics at your company.
+
+Sections required in your report:
+
+- Main objective of the analysis that specifies whether your model will be focused on prediction or interpretation and the benefits that your analysis provides to the business or stakeholders of this data.
+- Brief description of the data set you chose, a summary of its attributes, and an outline of what you are trying to accomplish with this analysis. __Pending__
+- Brief summary of data exploration and actions taken for data cleaning or feature engineering. __Pending__
+- Summary of training at least three different classifier models, preferably of different nature in explainability and predictability. For example, you can start with a simple logistic regression as a baseline, adding other models or ensemble models. Preferably, all your models use the same training and test splits, or the same cross-validation method.
+- A paragraph explaining which of your classifier models you recommend as a final model that best fits your needs in terms of accuracy and explainability.
+- Summary Key Findings and Insights, which walks your reader through the main drivers of your model and insights from your data derived from your classifier model.
+- Suggestions for next steps in analyzing this data, which may include suggesting revisiting this model after adding specific data features that may help you achieve a better explanation or a better prediction.
+
+## Rubric
+
+This is based on the grading rubric of the similar assignment for the Deep Learning course.
+
+#### Does the report include a section describing the data?  
+The summary of the data should help understand the features available and how they will be used for prediction or interpretation.  
+One extra point if the summary of the data is presented with graphs of distributions and plots that show the relation between features and the outcome variable
+
+#### Does the report include a paragraph detailing the main objective of this analysis? 
+
+This plan exceeds expectations. In addition to plan out subtasks and vision for this analysis, it also anticipates possible snags that might be incorporated into preliminary hypothesis of the data.
+
+#### Does the report include a section with variations of Unsupervised Learning models and which one is the model that best suits the main objectives of this analysis?
+
+Yes, there are at least 3 different models. One of them is presented as the better alternative, and some findings are presented.
+
+#### Does the report include a clear and well presented section with key findings about the problem and next steps?
+
+Yes. Takeaways and findings derived from the model are well presented. The quality of insights or the next steps section award this section an extra point.
+
+#### Does the report highlight possible flaws in the model and a plan of action to revisit this analysis with additional data or different predictive modeling techniques? 
+
+Yes. There is a comprehensive list of possible flaws of this model and a detailed plan to revisit this with additional data or different predictive modeling techniques. The quality of this section awards it an extra point.
