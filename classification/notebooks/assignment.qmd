@@ -1,0 +1,65 @@
+---
+title: "Classification Assignment - Heart Disease"
+format: 
+    pdf: default
+    html:
+        embed-resources: true
+---
+
+## Overview - Main objective
+
+- Does the report include a paragraph detailing the main objective(s) of this analysis?
+
+This plan exceeds expectations. In addition to plan out subtasks and vision for this analysis, it also anticipates possible snags that might be incorporated into preliminary hypothesis of the data.
+
+- Main objective of the analysis that specifies whether your model will be focused on prediction or interpretation and the benefits that your analysis provides to the business or stakeholders of this data.
+
+
+## Data
+
+For this analysis, we leverage data on customer personality that can be found [here](https://www.kaggle.com/datasets/imakash3011/customer-personality-analysis/data). There are entries about 2240 customers, each one identified by a unique ID in the dataset. For each customer, a variety of data is available, spread across 28 columns. Information includes year of birth, number of kids at home (and at what relative age, e.g. kids, teens, etc.), marital status, level of education, income and various metrics on purchase habits such as amount of meat/fruits/vegetables/etc. bought. See below a complete data dictionary:
+
+- Does the report include a section describing the data?
+The summary of the data should help understand the features available and how they will be used for prediction or interpretation.  
+One extra point if the summary of the data is presented with graphs of distributions and plots that show the relation between features and the outcome variable
+
+- Brief description of the data set you chose, a summary of its attributes, and an outline of what you are trying to accomplish with this analysis.
+
+## Data Exploration and Data Cleaning
+
+- Brief summary of data exploration and actions taken for data cleaning or feature engineering.
+
+## Supervised Learning Models - Classification Algorithms
+
+- Does the report include a section with variations of Supervised Learning models and specifies which one is the model that best suits the main objective(s) of this analysis?
+Yes, there are at least 3 different models. One of them is presented as the better alternative, and some findings are presented.
+
+- Summary of training at least three different classifier models, preferably of different nature in explainability and predictability. For example, you can start with a simple logistic regression as a baseline, adding other models or ensemble models. Preferably, all your models use the same training and test splits, or the same cross-validation method.
+
+### Algo1
+
+
+## Findings
+
+- Does the report include a clear and well presented section with key findings related to the main objective(s) of the analysis?
+
+Does the report include a clear and well presented section with key findings about the problem and next steps?
+
+Yes. Takeaways and findings derived from the model are well presented. The quality of insights or the next steps section award this section an extra point.
+
+- A paragraph explaining which of your classifier models you recommend as a final model that best fits your needs in terms of accuracy and explainability.
+
+- Summary Key Findings and Insights, which walks your reader through the main drivers of your model and insights from your data derived from your classifier model.
+
+## Flaws and Future Improvements
+
+Does the report highlight possible flaws in the model and a plan of action to revisit this analysis with additional data or different predictive modeling techniques? 
+
+Yes. There is a comprehensive list of possible flaws of this model and a detailed plan to revisit this with additional data or different predictive modeling techniques. The quality of this section awards it an extra point.
+
+- Suggestions for next steps in analyzing this data, which may include suggesting revisiting this model after adding specific data features that may help you achieve a better explanation or a better prediction.
+
+## Conclusion
+
+- Summary Key Findings and Insights, which walks your reader through the main drivers of your model and insights from your data derived from your classifier model.
+- Suggestions for next steps in analyzing this data, which may include suggesting revisiting this model after adding specific data features that may help you achieve a better explanation or a better prediction.
